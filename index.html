@@ -12,74 +12,149 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="app">
+
+<!-- ===================== ECRAN DE BIENVENUE (choix du mode) ===================== -->
+<div id="welcomeScreen" class="welcome-screen">
+  <div class="welcome-content">
+    <h1 id="welcomeTitle">Que voulez-vous cuisiner ?</h1>
+    <div class="welcome-modes">
+      <button class="welcome-mode-btn" data-mode="crepe">
+        <span class="welcome-emoji">🥞</span>
+        <span data-i18n="modeCrepe">Crêpe</span>
+      </button>
+      <button class="welcome-mode-btn" data-mode="pancake">
+        <span class="welcome-emoji">🥯</span>
+        <span data-i18n="modePancake">Pancake</span>
+      </button>
+      <button class="welcome-mode-btn" data-mode="gaufre">
+        <span class="welcome-emoji">🧇</span>
+        <span data-i18n="modeGaufre">Gaufre</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== APPLICATION PRINCIPALE ===================== -->
+<div class="app" id="mainApp" hidden>
 
   <header class="app-header">
-    <h1>Cuisson Timer</h1>
-    <button id="darkModeToggle" class="icon-btn" aria-label="Basculer mode sombre">🌙</button>
+    <h1 data-i18n="appName">Cuisson Timer</h1>
   </header>
 
-  <nav class="mode-selector">
-    <button class="mode-btn active" data-mode="crepe">🥞 Crêpe</button>
-    <button class="mode-btn" data-mode="pancake">🥯 Pancake</button>
-    <button class="mode-btn" data-mode="gaufre">🧇 Gaufre</button>
+  <!-- ===== Onglets ===== -->
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="timer" data-i18n="tabTimer">Minuteur</button>
+    <button class="tab-btn" data-tab="recipes" data-i18n="tabRecipes">Recettes</button>
+    <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">Réglages</button>
   </nav>
 
-  <main class="timer-section">
-    <div class="step-indicator" id="stepIndicator">Prêt à démarrer</div>
+  <!-- ===== Onglet Minuteur ===== -->
+  <section class="tab-panel" id="panel-timer">
 
-    <div class="timer-display" id="timerDisplay">00:00</div>
+    <nav class="mode-selector">
+      <button class="mode-btn" data-mode="crepe">🥞 <span data-i18n="modeCrepe">Crêpe</span></button>
+      <button class="mode-btn" data-mode="pancake">🥯 <span data-i18n="modePancake">Pancake</span></button>
+      <button class="mode-btn" data-mode="gaufre">🧇 <span data-i18n="modeGaufre">Gaufre</span></button>
+    </nav>
 
-    <div class="settings-panel" id="settingsPanel">
-      <div class="setting-row" id="face1Row">
-        <label for="face1Duration" id="face1Label">Face 1 (s)</label>
-        <input type="number" id="face1Duration" min="5" max="600" step="1">
-      </div>
-      <div class="setting-row" id="face2Row">
-        <label for="face2Duration" id="face2Label">Face 2 (s)</label>
-        <input type="number" id="face2Duration" min="5" max="600" step="1">
-      </div>
-    </div>
+    <main class="timer-section">
+      <div class="step-indicator" id="stepIndicator">Prêt à démarrer</div>
 
-    <div class="controls">
-      <button id="startPauseBtn" class="btn-large btn-primary">Démarrer</button>
-      <button id="resetBtn" class="btn-large btn-secondary">Réinitialiser</button>
-    </div>
+      <div class="timer-display" id="timerDisplay">00:00</div>
 
-    <button id="mainActionBtn" class="btn-large btn-action" hidden>Nouvelle crêpe</button>
-  </main>
+      <div class="settings-panel" id="settingsPanel">
+        <div class="setting-row" id="face1Row">
+          <label for="face1Duration" id="face1Label">Face 1 (s)</label>
+          <input type="number" id="face1Duration" min="5" max="600" step="1">
+        </div>
+        <div class="setting-row" id="face2Row">
+          <label for="face2Duration" id="face2Label">Face 2 (s)</label>
+          <input type="number" id="face2Duration" min="5" max="600" step="1">
+        </div>
+      </div>
 
-  <section class="counters-section">
-    <h2>Compteurs</h2>
-    <div class="counters-grid">
-      <div class="counter-card">
-        <span class="counter-label">🥞 Crêpes</span>
-        <span class="counter-value" id="countCrepe">0</span>
+      <div class="controls">
+        <button id="startPauseBtn" class="btn-large btn-primary" data-i18n="btnStart">Démarrer</button>
+        <button id="resetFinishBtn" class="btn-large btn-secondary" data-i18n="btnFinish">Terminé</button>
       </div>
-      <div class="counter-card">
-        <span class="counter-label">🥯 Pancakes</span>
-        <span class="counter-value" id="countPancake">0</span>
+
+      <button id="mainActionBtn" class="btn-large btn-action" hidden>Nouvelle crêpe</button>
+    </main>
+
+    <section class="counters-section">
+      <h2 id="counterTitle">Compteur</h2>
+      <div class="counters-grid">
+        <div class="counter-card total" id="activeCounterCard">
+          <span class="counter-label" id="activeCounterLabel">🥞 Crêpes</span>
+          <span class="counter-value" id="activeCounterValue">0</span>
+        </div>
       </div>
-      <div class="counter-card">
-        <span class="counter-label">🧇 Gaufres</span>
-        <span class="counter-value" id="countGaufre">0</span>
-      </div>
-      <div class="counter-card total">
-        <span class="counter-label">Total</span>
-        <span class="counter-value" id="countTotal">0</span>
-      </div>
-    </div>
-    <button id="resetCountersBtn" class="btn-small">Remettre les compteurs à zéro</button>
+      <button id="resetCounterBtn" class="btn-small" data-i18n="resetCounterBtn">Remettre le compteur à zéro</button>
+    </section>
+
   </section>
 
-  <footer class="app-footer">
-    <p>Réglez vos temps, appuyez sur Démarrer, retournez au bon moment 👍</p>
-  </footer>
+  <!-- ===== Onglet Recettes ===== -->
+  <section class="tab-panel hidden" id="panel-recipes">
+    <h2 data-i18n="recipesTitle">Recettes classiques</h2>
+    <div class="servings-row">
+      <label for="servingsInput" data-i18n="recipesServings">Nombre de personnes</label>
+      <input type="number" id="servingsInput" min="1" max="20" value="4">
+    </div>
+    <div id="recipeContainer"></div>
+  </section>
+
+  <!-- ===== Onglet Réglages ===== -->
+  <section class="tab-panel hidden" id="panel-settings">
+    <h2 data-i18n="tabSettings">Réglages</h2>
+
+    <div class="setting-block">
+      <label data-i18n="settingsLanguage">Langue</label>
+      <select id="languageSelect">
+        <option value="fr">Français</option>
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="de">Deutsch</option>
+        <option value="pt">Português</option>
+      </select>
+    </div>
+
+    <div class="setting-block toggle-row">
+      <label data-i18n="settingsSound">Son</label>
+      <label class="switch">
+        <input type="checkbox" id="soundToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-block toggle-row">
+      <label data-i18n="settingsVibration">Vibration</label>
+      <label class="switch">
+        <input type="checkbox" id="vibrationToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-block toggle-row">
+      <label data-i18n="settingsDarkMode">Mode sombre</label>
+      <label class="switch">
+        <input type="checkbox" id="darkModeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-block">
+      <label data-i18n="settingsDefaultDurations">Durées par défaut</label>
+      <p class="hint-text">Modifiables directement dans l'onglet Minuteur pour chaque mode.</p>
+    </div>
+  </section>
 
 </div>
 
 <audio id="beepSound" src="assets/sounds/beep.mp3" preload="auto"></audio>
 
+<script src="translations.js"></script>
+<script src="recipes.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
