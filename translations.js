@@ -256,8 +256,5 @@ const TRANSLATIONS = {
   }
 };
 
-function t(key) {
-  const lang = (typeof state !== 'undefined' && state.settings && state.settings.language) || 'fr';
-  const dict = TRANSLATIONS[lang] || TRANSLATIONS.fr;
-  return dict[key] || TRANSLATIONS.fr[key] || key;
-}
+// NOTE : la fonction t() est définie dans script.js (elle utilise
+// state.prefs.language). Ne pas la redéfinir ici pour éviter toute confusion.
