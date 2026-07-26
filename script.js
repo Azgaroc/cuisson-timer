@@ -92,8 +92,6 @@ function cacheDom() {
   el.soundToggle = document.getElementById('soundToggle');
   el.vibrationToggle = document.getElementById('vibrationToggle');
   el.darkModeToggle = document.getElementById('darkModeToggle');
-
-  el.beepSound = document.getElementById('beepSound');
 }
 
 // ----------------------------------------------------------------
@@ -177,6 +175,7 @@ function initWelcomeScreen() {
 
   el.welcomeModeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
+      unlockAudio();
       state.currentMode = btn.dataset.mode;
       localStorage.setItem(STORAGE_KEYS.firstRun, 'true');
       showMainApp();
@@ -397,31 +396,62 @@ function finishCycle() {
 }
 
 // ----------------------------------------------------------------
-// Son : bips de décompte + alerte finale
+// Son : bips de décompte + alerte finale (Web Audio API)
+//
+// On n'utilise plus la balise <audio> + fichier mp3 : sur iPhone/Android,
+// audio.play() appelé depuis un setInterval (donc hors "geste utilisateur")
+// est souvent bloqué silencieusement par le navigateur. Un AudioContext,
+// une fois débloqué par UN clic (voir unlockAudio()), reste utilisable
+// ensuite pour générer des bips à la demande, même depuis un timer.
 // ----------------------------------------------------------------
+let audioCtx = null;
+
+function unlockAudio() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    audioCtx = new AudioContextClass();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
+}
+
+function beepTone(frequency = 880, durationMs = 150, delayMs = 0) {
+  if (!audioCtx) return;
+  const startTime = audioCtx.currentTime + delayMs / 1000;
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(frequency, startTime);
+
+  // Petite enveloppe pour éviter les "clics" audio et avoir un bip net
+  gainNode.gain.setValueAtTime(0.0001, startTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.35, startTime + 0.01);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + durationMs / 1000);
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  oscillator.start(startTime);
+  oscillator.stop(startTime + durationMs / 1000 + 0.02);
+}
+
 function playBeep() {
-  if (!state.prefs.sound) { vibrateIfEnabled(80); return; }
-  try {
-    el.beepSound.currentTime = 0;
-    el.beepSound.play().catch(() => {});
-  } catch (e) { /* audio non disponible */ }
   vibrateIfEnabled(80);
+  if (!state.prefs.sound) return;
+  unlockAudio();
+  beepTone(880, 150);
 }
 
 function playFinalAlert() {
-  if (!state.prefs.sound) { vibrateIfEnabled([150, 80, 150, 80, 150]); return; }
-  try {
-    // Rejoue plusieurs bips rapprochés pour marquer la fin (0 sec: bips x4)
-    let count = 0;
-    const playOnce = () => {
-      el.beepSound.currentTime = 0;
-      el.beepSound.play().catch(() => {});
-      count++;
-      if (count < 4) setTimeout(playOnce, 250);
-    };
-    playOnce();
-  } catch (e) { /* audio non disponible */ }
   vibrateIfEnabled([150, 80, 150, 80, 150]);
+  if (!state.prefs.sound) return;
+  unlockAudio();
+  // 4 bips rapprochés et plus aigus pour bien marquer la fin de cuisson
+  for (let i = 0; i < 4; i++) {
+    beepTone(1046, 180, i * 250);
+  }
 }
 
 function vibrateIfEnabled(pattern) {
@@ -438,6 +468,7 @@ function vibrate(pattern) {
 // Actions bouton principal
 // ----------------------------------------------------------------
 function handleStartPauseClick() {
+  unlockAudio();
   if (state.currentStep === 'idle' || state.currentStep === 'done') {
     startCycle();
   } else if (state.isRunning) {
