@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1e1e2f">
+<title>Cuisson Timer</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="app-header">
+    <h1>Cuisson Timer</h1>
+    <button id="darkModeToggle" class="icon-btn" aria-label="Basculer mode sombre">🌙</button>
+  </header>
+
+  <nav class="mode-selector">
+    <button class="mode-btn active" data-mode="crepe">🥞 Crêpe</button>
+    <button class="mode-btn" data-mode="pancake">🥯 Pancake</button>
+    <button class="mode-btn" data-mode="gaufre">🧇 Gaufre</button>
+  </nav>
+
+  <main class="timer-section">
+    <div class="step-indicator" id="stepIndicator">Prêt à démarrer</div>
+
+    <div class="timer-display" id="timerDisplay">00:00</div>
+
+    <div class="settings-panel" id="settingsPanel">
+      <div class="setting-row" id="face1Row">
+        <label for="face1Duration" id="face1Label">Face 1 (s)</label>
+        <input type="number" id="face1Duration" min="5" max="600" step="1">
+      </div>
+      <div class="setting-row" id="face2Row">
+        <label for="face2Duration" id="face2Label">Face 2 (s)</label>
+        <input type="number" id="face2Duration" min="5" max="600" step="1">
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="startPauseBtn" class="btn-large btn-primary">Démarrer</button>
+      <button id="resetBtn" class="btn-large btn-secondary">Réinitialiser</button>
+    </div>
+
+    <button id="mainActionBtn" class="btn-large btn-action" hidden>Nouvelle crêpe</button>
+  </main>
+
+  <section class="counters-section">
+    <h2>Compteurs</h2>
+    <div class="counters-grid">
+      <div class="counter-card">
+        <span class="counter-label">🥞 Crêpes</span>
+        <span class="counter-value" id="countCrepe">0</span>
+      </div>
+      <div class="counter-card">
+        <span class="counter-label">🥯 Pancakes</span>
+        <span class="counter-value" id="countPancake">0</span>
+      </div>
+      <div class="counter-card">
+        <span class="counter-label">🧇 Gaufres</span>
+        <span class="counter-value" id="countGaufre">0</span>
+      </div>
+      <div class="counter-card total">
+        <span class="counter-label">Total</span>
+        <span class="counter-value" id="countTotal">0</span>
+      </div>
+    </div>
+    <button id="resetCountersBtn" class="btn-small">Remettre les compteurs à zéro</button>
+  </section>
+
+  <footer class="app-footer">
+    <p>Réglez vos temps, appuyez sur Démarrer, retournez au bon moment 👍</p>
+  </footer>
+
+</div>
+
+<audio id="beepSound" src="assets/sounds/beep.mp3" preload="auto"></audio>
+
+<script src="script.js"></script>
+</body>
+</html>
