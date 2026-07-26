@@ -6,39 +6,34 @@
 'use strict';
 
 // ----------------------------------------------------------------
-// Configuration des modes
+// Configuration des modes (les libellés viennent de translations.js)
 // ----------------------------------------------------------------
 const MODES = {
   crepe: {
-    label: 'crêpe',
-    emoji: '🥞',
     hasTwoFaces: true,
     defaultDurations: { face1: 45, face2: 30 },
-    face1LabelText: 'Face 1 (s)',
-    face2LabelText: 'Face 2 (s)'
+    emoji: '🥞'
   },
   pancake: {
-    label: 'pancake',
-    emoji: '🥯',
     hasTwoFaces: true,
     defaultDurations: { face1: 90, face2: 60 },
-    face1LabelText: 'Face 1 (s)',
-    face2LabelText: 'Face 2 (s)'
+    emoji: '🥯'
   },
   gaufre: {
-    label: 'gaufre',
-    emoji: '🧇',
     hasTwoFaces: false,
     defaultDurations: { face1: 240 },
-    face1LabelText: 'Durée totale (s)'
+    emoji: '🧇'
   }
 };
 
 const STORAGE_KEYS = {
   settings: 'cuissonTimer.settings',
   counters: 'cuissonTimer.counters',
-  theme: 'cuissonTimer.theme'
+  prefs: 'cuissonTimer.prefs',
+  firstRun: 'cuissonTimer.firstRunDone'
 };
+
+const COUNTDOWN_THRESHOLD = 5; // déclenche les bips à partir de 5s restantes
 
 // ----------------------------------------------------------------
 // Etat de l'application
@@ -49,34 +44,57 @@ let state = {
   isRunning: false,
   currentStep: 'idle', // idle | face1 | face2 | done
   remainingSeconds: 0,
+  lastBeepedSecond: null,
   settings: loadSettings(),
-  counters: loadCounters()
+  counters: loadCounters(),
+  prefs: loadPrefs()
 };
 
 // ----------------------------------------------------------------
 // Références DOM
 // ----------------------------------------------------------------
-const el = {
-  modeButtons: document.querySelectorAll('.mode-btn'),
-  stepIndicator: document.getElementById('stepIndicator'),
-  timerDisplay: document.getElementById('timerDisplay'),
-  face1Row: document.getElementById('face1Row'),
-  face2Row: document.getElementById('face2Row'),
-  face1Label: document.getElementById('face1Label'),
-  face2Label: document.getElementById('face2Label'),
-  face1Duration: document.getElementById('face1Duration'),
-  face2Duration: document.getElementById('face2Duration'),
-  startPauseBtn: document.getElementById('startPauseBtn'),
-  resetBtn: document.getElementById('resetBtn'),
-  mainActionBtn: document.getElementById('mainActionBtn'),
-  countCrepe: document.getElementById('countCrepe'),
-  countPancake: document.getElementById('countPancake'),
-  countGaufre: document.getElementById('countGaufre'),
-  countTotal: document.getElementById('countTotal'),
-  resetCountersBtn: document.getElementById('resetCountersBtn'),
-  darkModeToggle: document.getElementById('darkModeToggle'),
-  beepSound: document.getElementById('beepSound')
-};
+const el = {};
+
+function cacheDom() {
+  el.welcomeScreen = document.getElementById('welcomeScreen');
+  el.mainApp = document.getElementById('mainApp');
+  el.welcomeModeButtons = document.querySelectorAll('.welcome-mode-btn');
+
+  el.tabButtons = document.querySelectorAll('.tab-btn');
+  el.panels = {
+    timer: document.getElementById('panel-timer'),
+    recipes: document.getElementById('panel-recipes'),
+    settings: document.getElementById('panel-settings')
+  };
+
+  el.modeButtons = document.querySelectorAll('.mode-selector .mode-btn');
+  el.stepIndicator = document.getElementById('stepIndicator');
+  el.timerDisplay = document.getElementById('timerDisplay');
+  el.face1Row = document.getElementById('face1Row');
+  el.face2Row = document.getElementById('face2Row');
+  el.face1Label = document.getElementById('face1Label');
+  el.face2Label = document.getElementById('face2Label');
+  el.face1Duration = document.getElementById('face1Duration');
+  el.face2Duration = document.getElementById('face2Duration');
+  el.startPauseBtn = document.getElementById('startPauseBtn');
+  el.resetFinishBtn = document.getElementById('resetFinishBtn');
+  el.mainActionBtn = document.getElementById('mainActionBtn');
+
+  el.counterTitle = document.getElementById('counterTitle');
+  el.activeCounterLabel = document.getElementById('activeCounterLabel');
+  el.activeCounterValue = document.getElementById('activeCounterValue');
+  el.resetCounterBtn = document.getElementById('resetCounterBtn');
+
+  el.servingsInput = document.getElementById('servingsInput');
+  el.recipeContainer = document.getElementById('recipeContainer');
+
+  el.languageSelect = document.getElementById('languageSelect');
+  el.soundToggle = document.getElementById('soundToggle');
+  el.vibrationToggle = document.getElementById('vibrationToggle');
+  el.darkModeToggle = document.getElementById('darkModeToggle');
+
+  el.beepSound = document.getElementById('beepSound');
+}
 
 // ----------------------------------------------------------------
 // Persistance localStorage
@@ -109,16 +127,94 @@ function saveCounters() {
   localStorage.setItem(STORAGE_KEYS.counters, JSON.stringify(state.counters));
 }
 
-function loadTheme() {
-  return localStorage.getItem(STORAGE_KEYS.theme) || 'light';
+function loadPrefs() {
+  const raw = localStorage.getItem(STORAGE_KEYS.prefs);
+  const defaults = { language: 'fr', sound: true, vibration: true, darkMode: false };
+  if (raw) {
+    try { return { ...defaults, ...JSON.parse(raw) }; } catch (e) { /* fallback */ }
+  }
+  const browserLang = (navigator.language || 'fr').slice(0, 2);
+  if (TRANSLATIONS[browserLang]) defaults.language = browserLang;
+  return defaults;
 }
 
-function saveTheme(theme) {
-  localStorage.setItem(STORAGE_KEYS.theme, theme);
+function savePrefs() {
+  localStorage.setItem(STORAGE_KEYS.prefs, JSON.stringify(state.prefs));
+}
+
+// Adapter pour translations.js qui lit state.settings.language
+Object.defineProperty(state, 'settingsLangProxy', { enumerable: false });
+
+// ----------------------------------------------------------------
+// Traduction de l'UI (i18n)
+// ----------------------------------------------------------------
+function translateStaticUI() {
+  document.querySelectorAll('[data-i18n]').forEach(node => {
+    const key = node.getAttribute('data-i18n');
+    node.textContent = t(key);
+  });
+  document.title = t('appName');
+}
+
+// Override de t() pour utiliser state.prefs.language
+function t(key) {
+  const lang = (state.prefs && state.prefs.language) || 'fr';
+  const dict = TRANSLATIONS[lang] || TRANSLATIONS.fr;
+  return dict[key] || TRANSLATIONS.fr[key] || key;
 }
 
 // ----------------------------------------------------------------
-// Rendu UI
+// Ecran de bienvenue
+// ----------------------------------------------------------------
+function initWelcomeScreen() {
+  const firstRunDone = localStorage.getItem(STORAGE_KEYS.firstRun);
+  if (firstRunDone) {
+    showMainApp();
+    return;
+  }
+  el.welcomeScreen.hidden = false;
+  el.mainApp.hidden = true;
+
+  el.welcomeModeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.currentMode = btn.dataset.mode;
+      localStorage.setItem(STORAGE_KEYS.firstRun, 'true');
+      showMainApp();
+    });
+  });
+}
+
+function showMainApp() {
+  el.welcomeScreen.hidden = true;
+  el.mainApp.hidden = false;
+  renderModeUI();
+  renderCounter();
+  switchTab('timer');
+}
+
+// ----------------------------------------------------------------
+// Onglets
+// ----------------------------------------------------------------
+function switchTab(tabName) {
+  el.tabButtons.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+  Object.keys(el.panels).forEach(key => {
+    el.panels[key].classList.toggle('hidden', key !== tabName);
+  });
+  if (tabName === 'recipes') {
+    renderRecipesTab();
+  }
+}
+
+function initTabs() {
+  el.tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+}
+
+// ----------------------------------------------------------------
+// Rendu UI - Minuteur
 // ----------------------------------------------------------------
 function renderModeUI() {
   const modeConfig = MODES[state.currentMode];
@@ -127,27 +223,30 @@ function renderModeUI() {
     btn.classList.toggle('active', btn.dataset.mode === state.currentMode);
   });
 
-  el.face1Label.textContent = modeConfig.face1LabelText;
+  el.face1Label.textContent = modeConfig.hasTwoFaces ? t('face1Label') : t('totalDurationLabel');
   el.face1Duration.value = state.settings[state.currentMode].face1;
 
   if (modeConfig.hasTwoFaces) {
     el.face2Row.style.display = 'flex';
-    el.face2Label.textContent = modeConfig.face2LabelText;
+    el.face2Label.textContent = t('face2Label');
     el.face2Duration.value = state.settings[state.currentMode].face2;
   } else {
     el.face2Row.style.display = 'none';
   }
 
-  el.mainActionBtn.textContent = `Nouvelle ${modeConfig.label}`;
+  const newModeBtnKey = { crepe: 'btnNewCrepe', pancake: 'btnNewPancake', gaufre: 'btnNewGaufre' }[state.currentMode];
+  el.mainActionBtn.textContent = t(newModeBtnKey);
+
+  renderCounter();
   resetCycleUI();
 }
 
-function renderCounters() {
-  el.countCrepe.textContent = state.counters.crepe;
-  el.countPancake.textContent = state.counters.pancake;
-  el.countGaufre.textContent = state.counters.gaufre;
-  const total = state.counters.crepe + state.counters.pancake + state.counters.gaufre;
-  el.countTotal.textContent = total;
+function renderCounter() {
+  const modeConfig = MODES[state.currentMode];
+  const labelKey = { crepe: 'modeCrepe', pancake: 'modePancake', gaufre: 'modeGaufre' }[state.currentMode];
+  el.counterTitle.textContent = t('counterLabel');
+  el.activeCounterLabel.textContent = `${modeConfig.emoji} ${t(labelKey)}`;
+  el.activeCounterValue.textContent = state.counters[state.currentMode];
 }
 
 function formatTime(totalSeconds) {
@@ -158,6 +257,7 @@ function formatTime(totalSeconds) {
 
 function updateTimerDisplay() {
   el.timerDisplay.textContent = formatTime(state.remainingSeconds);
+  el.timerDisplay.classList.toggle('countdown', state.remainingSeconds <= COUNTDOWN_THRESHOLD && state.remainingSeconds > 0 && state.isRunning);
 }
 
 function setStepIndicator(text, cssClass) {
@@ -168,19 +268,18 @@ function setStepIndicator(text, cssClass) {
 function resetCycleUI() {
   state.currentStep = 'idle';
   state.isRunning = false;
-  clearInterval(state.timerId);
+  state.lastBeepedSecond = null;
+    clearInterval(state.timerId);
   state.timerId = null;
-  el.startPauseBtn.textContent = 'Démarrer';
+  el.startPauseBtn.textContent = t('btnStart');
   el.startPauseBtn.classList.remove('running');
+  el.startPauseBtn.hidden = false;
+  el.resetFinishBtn.textContent = t('btnFinish');
   el.mainActionBtn.hidden = true;
-  el.settingsPanelEnable = true;
   setSettingsInputsDisabled(false);
-  const modeConfig = MODES[state.currentMode];
-  state.remainingSeconds = modeConfig.hasTwoFaces
-    ? getDuration('face1')
-    : getDuration('face1');
+  state.remainingSeconds = getDuration('face1');
   updateTimerDisplay();
-  setStepIndicator('Prêt à démarrer');
+  setStepIndicator(t('stepReady'));
 }
 
 function setSettingsInputsDisabled(disabled) {
@@ -209,14 +308,15 @@ function startCycle() {
   persistCurrentDurations();
   setSettingsInputsDisabled(true);
   state.isRunning = true;
-  el.startPauseBtn.textContent = 'Pause';
+  state.lastBeepedSecond = null;
+  el.startPauseBtn.textContent = t('btnPause');
   el.startPauseBtn.classList.add('running');
   el.mainActionBtn.hidden = true;
 
   if (state.currentStep === 'idle' || state.currentStep === 'done') {
     state.currentStep = 'face1';
     state.remainingSeconds = getDuration('face1');
-    setStepIndicator('Cuisson : Face 1');
+    setStepIndicator(t('stepFace1'));
   }
 
   runTick();
@@ -226,7 +326,7 @@ function pauseCycle() {
   state.isRunning = false;
   clearInterval(state.timerId);
   state.timerId = null;
-  el.startPauseBtn.textContent = 'Reprendre';
+  el.startPauseBtn.textContent = t('btnResume');
   el.startPauseBtn.classList.remove('running');
 }
 
@@ -234,6 +334,14 @@ function runTick() {
   clearInterval(state.timerId);
   state.timerId = setInterval(() => {
     if (!state.isRunning) return;
+
+    // Décompte sonore 5,4,3,2,1 avant chaque fin d'étape
+    if (state.remainingSeconds > 0 && state.remainingSeconds <= COUNTDOWN_THRESHOLD
+        && state.lastBeepedSecond !== state.remainingSeconds) {
+      state.lastBeepedSecond = state.remainingSeconds;
+      playBeep();
+    }
+
     state.remainingSeconds--;
     updateTimerDisplay();
 
@@ -245,34 +353,33 @@ function runTick() {
 
 function handleStepEnd() {
   const modeConfig = MODES[state.currentMode];
-  playAlert();
+  playFinalAlert();
 
   if (state.currentStep === 'face1') {
     if (modeConfig.hasTwoFaces) {
+      // Enchaînement automatique vers face 2 après un court signal de retournement
       clearInterval(state.timerId);
       state.timerId = null;
-      state.isRunning = false;
-      state.currentStep = 'flip';
-      setStepIndicator('🔄 Retournez maintenant !', 'flip');
-      el.startPauseBtn.textContent = 'Face 2 : Démarrer';
-      el.startPauseBtn.classList.remove('running');
+      state.currentStep = 'face2';
+      state.lastBeepedSecond = null;
+      setStepIndicator(t('stepFlip'), 'flip');
       state.remainingSeconds = getDuration('face2');
       updateTimerDisplay();
+      vibrate([200, 100, 200]);
+
+      // Petite pause visuelle de 1.5s puis démarrage automatique de la face 2
+      setTimeout(() => {
+        if (state.currentStep === 'face2') {
+          setStepIndicator(t('stepFace2'));
+          runTick();
+        }
+      }, 1500);
     } else {
       finishCycle();
     }
   } else if (state.currentStep === 'face2') {
     finishCycle();
   }
-}
-
-function startFace2() {
-  state.currentStep = 'face2';
-  state.isRunning = true;
-  el.startPauseBtn.textContent = 'Pause';
-  el.startPauseBtn.classList.add('running');
-  setStepIndicator('Cuisson : Face 2');
-  runTick();
 }
 
 function finishCycle() {
@@ -282,21 +389,43 @@ function finishCycle() {
   state.currentStep = 'done';
   state.remainingSeconds = 0;
   updateTimerDisplay();
-  setStepIndicator('✅ Cuisson terminée !', 'done');
-  el.startPauseBtn.textContent = 'Démarrer';
-  el.startPauseBtn.classList.remove('running');
+  setStepIndicator(t('stepDone'), 'done');
+  el.startPauseBtn.hidden = true;
   el.mainActionBtn.hidden = false;
   setSettingsInputsDisabled(false);
-  playAlert();
-  vibrate([200, 100, 200]);
+  vibrate([200, 100, 200, 100, 200]);
 }
 
-function playAlert() {
+// ----------------------------------------------------------------
+// Son : bips de décompte + alerte finale
+// ----------------------------------------------------------------
+function playBeep() {
+  if (!state.prefs.sound) { vibrateIfEnabled(80); return; }
   try {
     el.beepSound.currentTime = 0;
     el.beepSound.play().catch(() => {});
   } catch (e) { /* audio non disponible */ }
-  vibrate(150);
+  vibrateIfEnabled(80);
+}
+
+function playFinalAlert() {
+  if (!state.prefs.sound) { vibrateIfEnabled([150, 80, 150, 80, 150]); return; }
+  try {
+    // Rejoue plusieurs bips rapprochés pour marquer la fin (0 sec: bips x4)
+    let count = 0;
+    const playOnce = () => {
+      el.beepSound.currentTime = 0;
+      el.beepSound.play().catch(() => {});
+      count++;
+      if (count < 4) setTimeout(playOnce, 250);
+    };
+    playOnce();
+  } catch (e) { /* audio non disponible */ }
+  vibrateIfEnabled([150, 80, 150, 80, 150]);
+}
+
+function vibrateIfEnabled(pattern) {
+  if (state.prefs.vibration) vibrate(pattern);
 }
 
 function vibrate(pattern) {
@@ -306,46 +435,44 @@ function vibrate(pattern) {
 }
 
 // ----------------------------------------------------------------
-// Actions bouton principal (start/pause)
+// Actions bouton principal
 // ----------------------------------------------------------------
 function handleStartPauseClick() {
   if (state.currentStep === 'idle' || state.currentStep === 'done') {
     startCycle();
-  } else if (state.currentStep === 'flip') {
-    startFace2();
   } else if (state.isRunning) {
     pauseCycle();
   } else {
     state.isRunning = true;
-    el.startPauseBtn.textContent = 'Pause';
+    el.startPauseBtn.textContent = t('btnPause');
     el.startPauseBtn.classList.add('running');
     runTick();
   }
 }
 
-function handleResetClick() {
+function handleResetFinishClick() {
   resetCycleUI();
 }
 
 function handleMainActionClick() {
   state.counters[state.currentMode]++;
   saveCounters();
-  renderCounters();
+  renderCounter();
   resetCycleUI();
   startCycle();
 }
 
-function handleResetCountersClick() {
-  const confirmed = confirm('Voulez-vous vraiment remettre tous les compteurs à zéro ?');
+function handleResetCounterClick() {
+  const confirmed = confirm(t('confirmResetCounter'));
   if (!confirmed) return;
-  state.counters = { crepe: 0, pancake: 0, gaufre: 0 };
+  state.counters[state.currentMode] = 0;
   saveCounters();
-  renderCounters();
+  renderCounter();
 }
 
 function handleModeChange(newMode) {
   if (state.isRunning) {
-    const confirmed = confirm('Un cycle est en cours. Changer de mode va l\'annuler. Continuer ?');
+    const confirmed = confirm(t('confirmModeChange'));
     if (!confirmed) return;
   }
   state.currentMode = newMode;
@@ -353,51 +480,92 @@ function handleModeChange(newMode) {
 }
 
 // ----------------------------------------------------------------
-// Mode sombre
+// Onglet Recettes
 // ----------------------------------------------------------------
-function applyTheme(theme) {
-  if (theme === 'dark') {
+function renderRecipesTab() {
+  const servings = parseInt(el.servingsInput.value, 10) || 4;
+  el.recipeContainer.innerHTML = renderRecipe(state.currentMode, servings);
+}
+
+function initRecipesTab() {
+  el.servingsInput.addEventListener('input', renderRecipesTab);
+}
+
+// ----------------------------------------------------------------
+// Onglet Réglages
+// ----------------------------------------------------------------
+function initSettingsTab() {
+  el.languageSelect.value = state.prefs.language;
+  el.soundToggle.checked = state.prefs.sound;
+  el.vibrationToggle.checked = state.prefs.vibration;
+  el.darkModeToggle.checked = state.prefs.darkMode;
+
+  el.languageSelect.addEventListener('change', () => {
+    state.prefs.language = el.languageSelect.value;
+    savePrefs();
+    translateStaticUI();
+    renderModeUI();
+    if (!el.panels.recipes.classList.contains('hidden')) renderRecipesTab();
+  });
+
+  el.soundToggle.addEventListener('change', () => {
+    state.prefs.sound = el.soundToggle.checked;
+    savePrefs();
+  });
+
+  el.vibrationToggle.addEventListener('change', () => {
+    state.prefs.vibration = el.vibrationToggle.checked;
+    savePrefs();
+  });
+
+  el.darkModeToggle.addEventListener('change', () => {
+    state.prefs.darkMode = el.darkModeToggle.checked;
+    savePrefs();
+    applyDarkMode();
+  });
+}
+
+function applyDarkMode() {
+  if (state.prefs.darkMode) {
     document.documentElement.setAttribute('data-theme', 'dark');
-    el.darkModeToggle.textContent = '☀️';
   } else {
     document.documentElement.removeAttribute('data-theme');
-    el.darkModeToggle.textContent = '🌙';
   }
-  saveTheme(theme);
-}
-
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-  applyTheme(current === 'dark' ? 'light' : 'dark');
 }
 
 // ----------------------------------------------------------------
-// Ecouteurs d'événements
+// Ecouteurs d'événements (minuteur)
 // ----------------------------------------------------------------
-el.modeButtons.forEach(btn => {
-  btn.addEventListener('click', () => handleModeChange(btn.dataset.mode));
-});
+function initTimerEvents() {
+  el.modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => handleModeChange(btn.dataset.mode));
+  });
 
-el.startPauseBtn.addEventListener('click', handleStartPauseClick);
-el.resetBtn.addEventListener('click', handleResetClick);
-el.mainActionBtn.addEventListener('click', handleMainActionClick);
-el.resetCountersBtn.addEventListener('click', handleResetCountersClick);
-el.darkModeToggle.addEventListener('click', toggleTheme);
+  el.startPauseBtn.addEventListener('click', handleStartPauseClick);
+  el.resetFinishBtn.addEventListener('click', handleResetFinishClick);
+  el.mainActionBtn.addEventListener('click', handleMainActionClick);
+  el.resetCounterBtn.addEventListener('click', handleResetCounterClick);
 
-el.face1Duration.addEventListener('change', () => {
-  if (state.currentStep === 'idle') persistCurrentDurations();
-});
-el.face2Duration.addEventListener('change', () => {
-  if (state.currentStep === 'idle') persistCurrentDurations();
-});
+  el.face1Duration.addEventListener('change', () => {
+    if (state.currentStep === 'idle') persistCurrentDurations();
+  });
+  el.face2Duration.addEventListener('change', () => {
+    if (state.currentStep === 'idle') persistCurrentDurations();
+  });
+}
 
 // ----------------------------------------------------------------
 // Initialisation
 // ----------------------------------------------------------------
 function init() {
-  applyTheme(loadTheme());
-  renderModeUI();
-  renderCounters();
+  cacheDom();
+  applyDarkMode();
+  translateStaticUI();
+  initWelcomeScreen();
+  initTabs();
+  initTimerEvents();
+  initRecipesTab();
+  initSettingsTab();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -406,4 +574,4 @@ function init() {
   }
 }
 
-init();
+document.addEventListener('DOMContentLoaded', init);
