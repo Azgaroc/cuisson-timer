@@ -273,7 +273,11 @@ function updateTimerDisplay() {
 }
 
 function setRingState(cssClass) {
-  el.timerRingProgress.className = 'timer-ring-progress' + (cssClass ? ' ' + cssClass : '');
+  // Sur les éléments SVG, .className n'est pas une simple chaîne (c'est un
+  // SVGAnimatedString) : l'assigner directement échoue silencieusement (ou
+  // lève une erreur en mode strict) dans les vrais navigateurs. setAttribute
+  // fonctionne de façon fiable pour tous les éléments, HTML comme SVG.
+  el.timerRingProgress.setAttribute('class', 'timer-ring-progress' + (cssClass ? ' ' + cssClass : ''));
 }
 
 function setStepIndicator(text, cssClass) {
