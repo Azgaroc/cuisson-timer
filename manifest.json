@@ -1,6 +1,6 @@
 {
-  "name": "Cuisson Timer",
-  "short_name": "Cuisson",
+  "name": "Pancake Timer",
+  "short_name": "Pancake",
   "description": "Minuteur pour crêpes, pancakes et gaufres",
   "start_url": "./index.html",
   "scope": "./",

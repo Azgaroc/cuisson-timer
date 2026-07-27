@@ -1,4 +1,4 @@
-# 🥞 Cuisson Timer
+# 🥞 Pancake Timer
 
 Application web mobile-first, installable en PWA, pour minuter et compter la cuisson de **crêpes**, **pancakes** et **gaufres**.
 

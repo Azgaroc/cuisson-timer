@@ -12,7 +12,10 @@ const MODES = {
   crepe: {
     hasTwoFaces: true,
     defaultDurations: { face1: 45, face2: 30 },
-    emoji: '🫓'
+    // Même icône que celle définie dans recipes.js (CREPE_ICON_SVG) : on ne
+    // redéclare pas la constante ici pour éviter un conflit de nom entre
+    // fichiers chargés dans la même portée globale.
+    emoji: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M12 21 L4 8.5 A9 9 0 0 1 20 8.5 Z" fill="#F0C878"/><path d="M4 8.5 A9 9 0 0 1 20 8.5" fill="none" stroke="#A8551C" stroke-width="1.3" stroke-linecap="round"/><path d="M8 9.5 Q12 12 16 9.5" fill="none" stroke="#FFF3DC" stroke-width="1.1" stroke-linecap="round" opacity="0.85"/><circle cx="10.3" cy="12.5" r="0.9" fill="#A8551C" opacity="0.8"/><circle cx="14.2" cy="14" r="0.8" fill="#A8551C" opacity="0.8"/><circle cx="11.8" cy="17" r="0.7" fill="#A8551C" opacity="0.8"/></svg>'
   },
   pancake: {
     hasTwoFaces: true,
@@ -156,7 +159,9 @@ function translateStaticUI() {
     const key = node.getAttribute('data-i18n');
     node.textContent = t(key);
   });
-  document.title = t('appName');
+  // Le nom de l'app ("Pancake Timer") est volontairement fixe et non
+  // traduit, pour rester facilement reconnaissable/recherchable quelle
+  // que soit la langue de l'interface.
 }
 
 // Override de t() pour utiliser state.prefs.language
@@ -232,12 +237,14 @@ function renderModeUI() {
 
 function renderCounter(bump) {
   const modeConfig = MODES[state.currentMode];
-  const labelKey = { crepe: 'modeCrepe', pancake: 'modePancake', gaufre: 'modeGaufre' }[state.currentMode];
+  const singularKey = { crepe: 'modeCrepe', pancake: 'modePancake', gaufre: 'modeGaufre' }[state.currentMode];
+  const pluralKey = { crepe: 'modeCrepePlural', pancake: 'modePancakePlural', gaufre: 'modeGaufrePlural' }[state.currentMode];
+  const count = state.counters[state.currentMode] || 0;
 
   el.counterTitle.textContent = t('counterLabel');
-  el.activeCounterEmoji.textContent = modeConfig.emoji;
-  el.activeCounterLabel.textContent = t(labelKey);
-  el.activeCounterValue.textContent = state.counters[state.currentMode] || 0;
+  el.activeCounterEmoji.innerHTML = modeConfig.emoji;
+  el.activeCounterLabel.textContent = t(count === 1 ? singularKey : pluralKey);
+  el.activeCounterValue.textContent = count;
 
   if (bump && el.counterCard) {
     el.counterCard.classList.remove('bump');

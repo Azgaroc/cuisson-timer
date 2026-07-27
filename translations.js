@@ -5,7 +5,6 @@
 
 const TRANSLATIONS = {
   fr: {
-    appName: "Cuisson Timer",
     heroTitle: "Prêt à régaler ?",
     heroSubtitle: "Choisissez ce que vous cuisinez, le minuteur s'occupe du reste.",
     chooseModeTitle: "Que voulez-vous cuisiner ?",
@@ -101,7 +100,6 @@ const TRANSLATIONS = {
     footerTagline: "Pensée pour tous les gourmands"
   },
   en: {
-    appName: "Cooking Timer",
     heroTitle: "Ready to cook?",
     heroSubtitle: "Pick what you're making, the timer handles the rest.",
     chooseModeTitle: "What do you want to cook?",
@@ -197,7 +195,6 @@ const TRANSLATIONS = {
     footerTagline: "Made for food lovers"
   },
   es: {
-    appName: "Temporizador de Cocina",
     heroTitle: "¿Listo para cocinar?",
     heroSubtitle: "Elige qué vas a preparar, el temporizador hace el resto.",
     chooseModeTitle: "¿Qué quieres cocinar?",
@@ -293,7 +290,6 @@ const TRANSLATIONS = {
     footerTagline: "Pensada para los golosos"
   },
   de: {
-    appName: "Back-Timer",
     heroTitle: "Bereit zum Backen?",
     heroSubtitle: "Wählen Sie, was Sie zubereiten - der Timer übernimmt den Rest.",
     chooseModeTitle: "Was möchten Sie zubereiten?",
@@ -389,7 +385,6 @@ const TRANSLATIONS = {
     footerTagline: "Gemacht für Genießer"
   },
   pt: {
-    appName: "Temporizador de Cozinha",
     heroTitle: "Pronto para cozinhar?",
     heroSubtitle: "Escolha o que vai preparar, o temporizador cuida do resto.",
     chooseModeTitle: "O que você quer cozinhar?",
