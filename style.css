@@ -25,6 +25,13 @@
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "Space Mono", ui-monospace, monospace;
+
+  /* Barre d'onglets : toujours sombre avec texte clair, quel que soit le
+     thème choisi (--cocoa s'inverse en mode sombre, donc on ne le réutilise
+     pas ici pour éviter un texte blanc sur fond clair). */
+  --nav-bg: #3E2620;
+  --nav-text: rgba(255, 255, 255, 0.62);
+  --nav-text-active: #F6CE86;
 }
 
 [data-theme="dark"] {
@@ -39,6 +46,7 @@
   --border: rgba(249, 238, 223, 0.12);
   --shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.5);
   --shadow-soft: 0 4px 14px -4px rgba(0, 0, 0, 0.4);
+  --nav-bg: #1E130E;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -396,6 +404,10 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   gap: 10px;
 }
 
+.counters-grid--single {
+  grid-template-columns: 1fr;
+}
+
 .counter-card {
   position: relative;
   background: var(--butter);
@@ -408,12 +420,19 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   transition: transform 0.15s ease;
 }
 
-.counter-card--total {
+.counter-card--active {
+  flex-direction: row;
+  justify-content: center;
+  align-items: baseline;
+  gap: 12px;
+  padding: 22px 10px;
   background: linear-gradient(155deg, var(--honey), var(--maple));
   color: #fff;
 }
 
-.counter-card--total .counter-label { color: rgba(255,255,255,0.85); }
+.counter-card--active .counter-emoji { font-size: 2rem; align-self: center; }
+.counter-card--active .counter-value { font-size: 2.4rem; }
+.counter-card--active .counter-label { color: rgba(255,255,255,0.85); font-size: 0.9rem; }
 
 .counter-card.bump { animation: bump 0.35s ease; }
 @keyframes bump {
@@ -533,6 +552,11 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
 
 .badge-difficulty {
   background: var(--jam);
+  color: #fff;
+}
+
+.badge-yield {
+  background: var(--sage);
   color: #fff;
 }
 
@@ -723,7 +747,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   z-index: 10;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  background: var(--cocoa);
+  background: var(--nav-bg);
   border-top-left-radius: 22px;
   border-top-right-radius: 22px;
   padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
@@ -737,7 +761,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   gap: 3px;
   background: none;
   border: none;
-  color: rgba(255,255,255,0.55);
+  color: var(--nav-text);
   font-family: var(--font-body);
   font-size: 0.68rem;
   font-weight: 700;
@@ -753,7 +777,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
 }
 
 .bottom-tabs .tab-btn.active {
-  color: var(--honey-light);
+  color: var(--nav-text-active);
   background: rgba(255,255,255,0.08);
 }
 

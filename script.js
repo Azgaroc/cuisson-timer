@@ -12,12 +12,12 @@ const MODES = {
   crepe: {
     hasTwoFaces: true,
     defaultDurations: { face1: 45, face2: 30 },
-    emoji: '🥞'
+    emoji: '🫓'
   },
   pancake: {
     hasTwoFaces: true,
     defaultDurations: { face1: 90, face2: 60 },
-    emoji: '🥯'
+    emoji: '🥞'
   },
   gaufre: {
     hasTwoFaces: false,
@@ -84,14 +84,11 @@ function cacheDom() {
   el.mainActionBtn = document.getElementById('mainActionBtn');
 
   el.counterTitle = document.getElementById('counterTitle');
-  el.counterValues = {
-    crepe: document.getElementById('counterValue-crepe'),
-    pancake: document.getElementById('counterValue-pancake'),
-    gaufre: document.getElementById('counterValue-gaufre'),
-    total: document.getElementById('counterValue-total')
-  };
-  el.counterCards = document.querySelectorAll('.counter-card[data-mode]');
-  el.counterResetButtons = document.querySelectorAll('.counter-reset');
+  el.activeCounterEmoji = document.getElementById('activeCounterEmoji');
+  el.activeCounterValue = document.getElementById('activeCounterValue');
+  el.activeCounterLabel = document.getElementById('activeCounterLabel');
+  el.counterResetBtn = document.getElementById('counterResetBtn');
+  el.counterCard = document.querySelector('.counter-card--active');
 
   el.servingsInput = document.getElementById('servingsInput');
   el.recipeContainer = document.getElementById('recipeContainer');
@@ -233,25 +230,20 @@ function renderModeUI() {
   resetCycleUI();
 }
 
-function renderCounter(bumpMode) {
-  el.counterTitle.textContent = t('counterLabel');
-  let total = 0;
-  Object.keys(el.counterValues).forEach(key => {
-    if (key === 'total') return;
-    const value = state.counters[key] || 0;
-    total += value;
-    el.counterValues[key].textContent = value;
-  });
-  el.counterValues.total.textContent = total;
+function renderCounter(bump) {
+  const modeConfig = MODES[state.currentMode];
+  const labelKey = { crepe: 'modeCrepe', pancake: 'modePancake', gaufre: 'modeGaufre' }[state.currentMode];
 
-  if (bumpMode) {
-    const card = document.querySelector(`.counter-card[data-mode="${bumpMode}"]`);
-    if (card) {
-      card.classList.remove('bump');
-      // force reflow pour pouvoir relancer l'animation si elle vient de jouer
-      void card.offsetWidth;
-      card.classList.add('bump');
-    }
+  el.counterTitle.textContent = t('counterLabel');
+  el.activeCounterEmoji.textContent = modeConfig.emoji;
+  el.activeCounterLabel.textContent = t(labelKey);
+  el.activeCounterValue.textContent = state.counters[state.currentMode] || 0;
+
+  if (bump && el.counterCard) {
+    el.counterCard.classList.remove('bump');
+    // force reflow pour pouvoir relancer l'animation si elle vient de jouer
+    void el.counterCard.offsetWidth;
+    el.counterCard.classList.add('bump');
   }
 }
 
@@ -341,6 +333,7 @@ function startCycle() {
     state.currentStepTotal = state.remainingSeconds;
     setStepIndicator(t('stepFace1'));
     setRingState();
+    updateTimerDisplay();
   }
 
   runTick();
@@ -477,9 +470,9 @@ function playFinalAlert() {
   vibrateIfEnabled([150, 80, 150, 80, 150]);
   if (!state.prefs.sound) return;
   unlockAudio();
-  // 4 bips rapprochés et plus aigus pour bien marquer la fin de cuisson
-  for (let i = 0; i < 4; i++) {
-    beepTone(1046, 180, i * 250);
+  // 5 bips rapprochés et plus aigus pour bien marquer la fin de cuisson
+  for (let i = 0; i < 5; i++) {
+    beepTone(1046, 180, i * 220);
   }
 }
 
@@ -511,21 +504,30 @@ function handleStartPauseClick() {
 }
 
 function handleResetFinishClick() {
+  // Si la cuisson est déjà terminée (étape "done"), appuyer sur "Terminé"
+  // signifie qu'on valide cette dernière cuisson : on l'ajoute au compteur
+  // avant de revenir à l'état prêt. Sinon (cycle en cours), ce bouton
+  // annule simplement le cycle sans incrémenter le compteur.
+  if (state.currentStep === 'done') {
+    state.counters[state.currentMode]++;
+    saveCounters();
+    renderCounter(true);
+  }
   resetCycleUI();
 }
 
 function handleMainActionClick() {
   state.counters[state.currentMode]++;
   saveCounters();
-  renderCounter(state.currentMode);
+  renderCounter(true);
   resetCycleUI();
   startCycle();
 }
 
-function handleResetCounterClick(mode) {
+function handleResetCounterClick() {
   const confirmed = confirm(t('confirmResetCounter'));
   if (!confirmed) return;
-  state.counters[mode] = 0;
+  state.counters[state.currentMode] = 0;
   saveCounters();
   renderCounter();
 }
@@ -606,12 +608,15 @@ function initTimerEvents() {
   el.startPauseBtn.addEventListener('click', handleStartPauseClick);
   el.resetFinishBtn.addEventListener('click', handleResetFinishClick);
   el.mainActionBtn.addEventListener('click', handleMainActionClick);
-  el.counterResetButtons.forEach(btn => {
-    btn.addEventListener('click', () => handleResetCounterClick(btn.dataset.mode));
-  });
+  el.counterResetBtn.addEventListener('click', handleResetCounterClick);
 
   el.face1Duration.addEventListener('change', () => {
-    if (state.currentStep === 'idle') persistCurrentDurations();
+    if (state.currentStep === 'idle') {
+      persistCurrentDurations();
+      state.remainingSeconds = getDuration('face1');
+      state.currentStepTotal = state.remainingSeconds;
+      updateTimerDisplay();
+    }
   });
   el.face2Duration.addEventListener('change', () => {
     if (state.currentStep === 'idle') persistCurrentDurations();

@@ -12,6 +12,9 @@ const TRANSLATIONS = {
     modeCrepe: "Crêpe",
     modePancake: "Pancake",
     modeGaufre: "Gaufre",
+    modeCrepePlural: "Crêpes",
+    modePancakePlural: "Pancakes",
+    modeGaufrePlural: "Gaufres",
     modeCrepeDesc: "Fine et dorée, à la française",
     modePancakeDesc: "Moelleux et gourmand",
     modeGaufreDesc: "Croustillante dehors, fondante dedans",
@@ -95,7 +98,7 @@ const TRANSLATIONS = {
     ],
     confirmCancelCycle: "Un cycle de cuisson est en cours. Cette action va l'annuler. Continuer ?",
     confirmResetCounter: "Voulez-vous vraiment remettre ce compteur à zéro ?",
-    footerTagline: "Fait avec 🧈 pour les gourmands"
+    footerTagline: "Pensée pour tous les gourmands"
   },
   en: {
     appName: "Cooking Timer",
@@ -105,6 +108,9 @@ const TRANSLATIONS = {
     modeCrepe: "Crepe",
     modePancake: "Pancake",
     modeGaufre: "Waffle",
+    modeCrepePlural: "Crepes",
+    modePancakePlural: "Pancakes",
+    modeGaufrePlural: "Waffles",
     modeCrepeDesc: "Thin and golden, French style",
     modePancakeDesc: "Fluffy and comforting",
     modeGaufreDesc: "Crisp outside, soft inside",
@@ -188,7 +194,7 @@ const TRANSLATIONS = {
     ],
     confirmCancelCycle: "A cooking cycle is running. This will cancel it. Continue?",
     confirmResetCounter: "Do you really want to reset this counter?",
-    footerTagline: "Made with 🧈 for food lovers"
+    footerTagline: "Made for food lovers"
   },
   es: {
     appName: "Temporizador de Cocina",
@@ -198,6 +204,9 @@ const TRANSLATIONS = {
     modeCrepe: "Crepe",
     modePancake: "Pancake",
     modeGaufre: "Gofre",
+    modeCrepePlural: "Crepes",
+    modePancakePlural: "Pancakes",
+    modeGaufrePlural: "Gofres",
     modeCrepeDesc: "Fina y dorada, estilo francés",
     modePancakeDesc: "Esponjoso y reconfortante",
     modeGaufreDesc: "Crujiente fuera, tierno dentro",
@@ -281,7 +290,7 @@ const TRANSLATIONS = {
     ],
     confirmCancelCycle: "Hay un ciclo de cocción en curso. Esta acción lo cancelará. ¿Continuar?",
     confirmResetCounter: "¿Realmente quieres reiniciar este contador?",
-    footerTagline: "Hecho con 🧈 para los golosos"
+    footerTagline: "Pensada para los golosos"
   },
   de: {
     appName: "Back-Timer",
@@ -291,6 +300,9 @@ const TRANSLATIONS = {
     modeCrepe: "Crêpe",
     modePancake: "Pancake",
     modeGaufre: "Waffel",
+    modeCrepePlural: "Crêpes",
+    modePancakePlural: "Pancakes",
+    modeGaufrePlural: "Waffeln",
     modeCrepeDesc: "Dünn und goldbraun, französische Art",
     modePancakeDesc: "Fluffig und gemütlich",
     modeGaufreDesc: "Außen knusprig, innen weich",
@@ -374,7 +386,7 @@ const TRANSLATIONS = {
     ],
     confirmCancelCycle: "Ein Back-Zyklus läuft. Diese Aktion bricht ihn ab. Fortfahren?",
     confirmResetCounter: "Möchten Sie diesen Zähler wirklich zurücksetzen?",
-    footerTagline: "Gemacht mit 🧈 für Genießer"
+    footerTagline: "Gemacht für Genießer"
   },
   pt: {
     appName: "Temporizador de Cozinha",
@@ -384,6 +396,9 @@ const TRANSLATIONS = {
     modeCrepe: "Crepe",
     modePancake: "Panqueca",
     modeGaufre: "Waffle",
+    modeCrepePlural: "Crepes",
+    modePancakePlural: "Panquecas",
+    modeGaufrePlural: "Waffles",
     modeCrepeDesc: "Fino e dourado, à francesa",
     modePancakeDesc: "Fofinha e reconfortante",
     modeGaufreDesc: "Crocante fora, macio dentro",
@@ -467,7 +482,7 @@ const TRANSLATIONS = {
     ],
     confirmCancelCycle: "Um ciclo de cozimento está em andamento. Esta ação irá cancelá-lo. Continuar?",
     confirmResetCounter: "Deseja realmente zerar este contador?",
-    footerTagline: "Feito com 🧈 para os guloso"
+    footerTagline: "Pensado para os gulosos"
   }
 };
 

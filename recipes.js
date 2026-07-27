@@ -6,8 +6,9 @@
 const RECIPES = {
   crepe: {
     nameKey: "recipeCrepeName",
-    emoji: "🥞",
+    emoji: "🫓",
     baseServings: 4,
+    baseYield: 12,
     prepMinutes: 10,
     cookMinutes: 20,
     difficultyKey: "difficultyEasy",
@@ -23,8 +24,9 @@ const RECIPES = {
   },
   pancake: {
     nameKey: "recipePancakeName",
-    emoji: "🥯",
+    emoji: "🥞",
     baseServings: 4,
+    baseYield: 12,
     prepMinutes: 10,
     cookMinutes: 15,
     difficultyKey: "difficultyEasy",
@@ -43,6 +45,7 @@ const RECIPES = {
     nameKey: "recipeGaufreName",
     emoji: "🧇",
     baseServings: 4,
+    baseYield: 8,
     prepMinutes: 15,
     cookMinutes: 20,
     difficultyKey: "difficultyMedium",
@@ -70,6 +73,8 @@ function renderRecipe(modeKey, servings) {
 
   const title = t(recipe.nameKey);
   const difficulty = t(recipe.difficultyKey);
+  const yieldLabelKey = { crepe: 'modeCrepePlural', pancake: 'modePancakePlural', gaufre: 'modeGaufrePlural' }[modeKey];
+  const estimatedYield = Math.round(scaleAmount(recipe.baseYield, recipe.baseServings, servings));
 
   const ingredientRows = recipe.ingredients.map(ing => {
     const amount = scaleAmount(ing.amount, recipe.baseServings, servings);
@@ -97,6 +102,7 @@ function renderRecipe(modeKey, servings) {
             <span class="badge">⏱️ ${t('badgePrep')} ${recipe.prepMinutes} ${t('unitMin')}</span>
             <span class="badge">🔥 ${t('badgeCook')} ${recipe.cookMinutes} ${t('unitMin')}</span>
             <span class="badge">👥 ${servings} ${t('badgeServings')}</span>
+            <span class="badge badge-yield">${recipe.emoji} ≈ ${estimatedYield} ${t(yieldLabelKey)}</span>
             <span class="badge badge-difficulty">${difficulty}</span>
           </div>
         </div>
