@@ -29,8 +29,7 @@ const MODES = {
 const STORAGE_KEYS = {
   settings: 'cuissonTimer.settings',
   counters: 'cuissonTimer.counters',
-  prefs: 'cuissonTimer.prefs',
-  firstRun: 'cuissonTimer.firstRunDone'
+  prefs: 'cuissonTimer.prefs'
 };
 
 const COUNTDOWN_THRESHOLD = 5; // déclenche les bips à partir de 5s restantes
@@ -40,6 +39,7 @@ const COUNTDOWN_THRESHOLD = 5; // déclenche les bips à partir de 5s restantes
 // ----------------------------------------------------------------
 let state = {
   currentMode: 'crepe',
+  activeTab: 'home',
   timerId: null,
   isRunning: false,
   currentStep: 'idle', // idle | face1 | face2 | done
@@ -56,13 +56,16 @@ let state = {
 const el = {};
 
 function cacheDom() {
-  el.welcomeScreen = document.getElementById('welcomeScreen');
   el.mainApp = document.getElementById('mainApp');
-  el.welcomeModeButtons = document.querySelectorAll('.welcome-mode-btn');
 
-  el.tabButtons = document.querySelectorAll('.tab-btn');
+  el.modeChooser = document.getElementById('modeChooser');
+  el.timerView = document.getElementById('timerView');
+  el.chooserModeButtons = document.querySelectorAll('.chooser-mode-btn');
+  el.backToChooserBtn = document.getElementById('backToChooserBtn');
+
+  el.tabButtons = document.querySelectorAll('.bottom-tabs .tab-btn');
   el.panels = {
-    timer: document.getElementById('panel-timer'),
+    home: document.getElementById('panel-home'),
     recipes: document.getElementById('panel-recipes'),
     settings: document.getElementById('panel-settings')
   };
@@ -162,39 +165,49 @@ function t(key) {
 }
 
 // ----------------------------------------------------------------
-// Ecran de bienvenue
+// Onglet Accueil : choix du mode (à chaque ouverture) + minuteur
 // ----------------------------------------------------------------
-function initWelcomeScreen() {
-  const firstRunDone = localStorage.getItem(STORAGE_KEYS.firstRun);
-  if (firstRunDone) {
-    showMainApp();
-    return;
-  }
-  el.welcomeScreen.hidden = false;
-  el.mainApp.hidden = true;
-
-  el.welcomeModeButtons.forEach(btn => {
+function initHomeChooser() {
+  el.chooserModeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       unlockAudio();
       state.currentMode = btn.dataset.mode;
-      localStorage.setItem(STORAGE_KEYS.firstRun, 'true');
-      showMainApp();
+      showTimerView();
     });
+  });
+
+  el.backToChooserBtn.addEventListener('click', () => {
+    showChooser();
   });
 }
 
-function showMainApp() {
-  el.welcomeScreen.hidden = true;
-  el.mainApp.hidden = false;
+function showTimerView() {
+  el.modeChooser.hidden = true;
+  el.timerView.hidden = false;
   renderModeUI();
-  renderCounter();
-  switchTab('timer');
+}
+
+// Revient à l'écran de choix de recette. Demande confirmation si un
+// cycle de cuisson est en cours, pour ne pas le perdre par erreur.
+function showChooser() {
+  if (state.isRunning || (state.currentStep !== 'idle' && state.currentStep !== 'done')) {
+    const confirmed = confirm(t('confirmCancelCycle'));
+    if (!confirmed) return;
+  }
+  clearInterval(state.timerId);
+  state.timerId = null;
+  state.isRunning = false;
+  state.currentStep = 'idle';
+
+  el.timerView.hidden = true;
+  el.modeChooser.hidden = false;
 }
 
 // ----------------------------------------------------------------
 // Onglets
 // ----------------------------------------------------------------
 function switchTab(tabName) {
+  state.activeTab = tabName;
   el.tabButtons.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
@@ -208,7 +221,16 @@ function switchTab(tabName) {
 
 function initTabs() {
   el.tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    btn.addEventListener('click', () => {
+      const tabName = btn.dataset.tab;
+      // Retaper sur l'onglet Accueil alors qu'il est déjà actif ramène
+      // à l'écran de choix de recette (pratique pour changer d'avis).
+      if (tabName === 'home' && state.activeTab === 'home') {
+        showChooser();
+        return;
+      }
+      switchTab(tabName);
+    });
   });
 }
 
@@ -503,7 +525,7 @@ function handleResetCounterClick() {
 
 function handleModeChange(newMode) {
   if (state.isRunning) {
-    const confirmed = confirm(t('confirmModeChange'));
+    const confirmed = confirm(t('confirmCancelCycle'));
     if (!confirmed) return;
   }
   state.currentMode = newMode;
@@ -592,7 +614,10 @@ function init() {
   cacheDom();
   applyDarkMode();
   translateStaticUI();
-  initWelcomeScreen();
+  switchTab('home');
+  el.timerView.hidden = true;
+  el.modeChooser.hidden = false;
+  initHomeChooser();
   initTabs();
   initTimerEvents();
   initRecipesTab();
