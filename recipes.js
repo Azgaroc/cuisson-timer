@@ -6,7 +6,11 @@
 const RECIPES = {
   crepe: {
     nameKey: "recipeCrepeName",
+    emoji: "🥞",
     baseServings: 4,
+    prepMinutes: 10,
+    cookMinutes: 20,
+    difficultyKey: "difficultyEasy",
     ingredients: [
       { key: "ingredientFlour", amount: 250, unit: "unitG" },
       { key: "ingredientMilk", amount: 500, unit: "unitMl" },
@@ -14,11 +18,16 @@ const RECIPES = {
       { key: "ingredientSugar", amount: 30, unit: "unitG" },
       { key: "ingredientButter", amount: 30, unit: "unitG" },
       { key: "ingredientSalt", amount: 1, unit: "unitPinch" }
-    ]
+    ],
+    stepsKey: "crepeSteps"
   },
   pancake: {
     nameKey: "recipePancakeName",
+    emoji: "🥯",
     baseServings: 4,
+    prepMinutes: 10,
+    cookMinutes: 15,
+    difficultyKey: "difficultyEasy",
     ingredients: [
       { key: "ingredientFlour", amount: 300, unit: "unitG" },
       { key: "ingredientMilk", amount: 350, unit: "unitMl" },
@@ -27,11 +36,16 @@ const RECIPES = {
       { key: "ingredientButter", amount: 50, unit: "unitG" },
       { key: "ingredientBakingPowder", amount: 11, unit: "unitG" },
       { key: "ingredientSalt", amount: 1, unit: "unitPinch" }
-    ]
+    ],
+    stepsKey: "pancakeSteps"
   },
   gaufre: {
     nameKey: "recipeGaufreName",
+    emoji: "🧇",
     baseServings: 4,
+    prepMinutes: 15,
+    cookMinutes: 20,
+    difficultyKey: "difficultyMedium",
     ingredients: [
       { key: "ingredientFlour", amount: 250, unit: "unitG" },
       { key: "ingredientMilk", amount: 400, unit: "unitMl" },
@@ -40,7 +54,8 @@ const RECIPES = {
       { key: "ingredientButter", amount: 80, unit: "unitG" },
       { key: "ingredientBakingPowder", amount: 11, unit: "unitG" },
       { key: "ingredientSalt", amount: 1, unit: "unitPinch" }
-    ]
+    ],
+    stepsKey: "gaufreSteps"
   }
 };
 
@@ -52,15 +67,51 @@ function scaleAmount(amount, baseServings, targetServings) {
 function renderRecipe(modeKey, servings) {
   const recipe = RECIPES[modeKey];
   if (!recipe) return '';
+
   const title = t(recipe.nameKey);
-  const rows = recipe.ingredients.map(ing => {
+  const difficulty = t(recipe.difficultyKey);
+
+  const ingredientRows = recipe.ingredients.map(ing => {
     const amount = scaleAmount(ing.amount, recipe.baseServings, servings);
     return `<li><span class="ingredient-name">${t(ing.key)}</span><span class="ingredient-amount">${amount} ${t(ing.unit)}</span></li>`;
   }).join('');
+
+  const steps = TRANSLATIONS[state.prefs.language] && TRANSLATIONS[state.prefs.language][recipe.stepsKey]
+    ? TRANSLATIONS[state.prefs.language][recipe.stepsKey]
+    : TRANSLATIONS.fr[recipe.stepsKey];
+
+  const stepRows = (steps || []).map((step, i) => `
+    <li>
+      <span class="step-num">${i + 1}</span>
+      <span class="step-text">${step}</span>
+    </li>
+  `).join('');
+
   return `
-    <div class="recipe-card">
-      <h3>${title}</h3>
-      <ul class="ingredient-list">${rows}</ul>
-    </div>
+    <article class="recipe-card recipe-card--${modeKey}">
+      <div class="recipe-card-head">
+        <span class="recipe-emoji">${recipe.emoji}</span>
+        <div>
+          <h3>${title}</h3>
+          <div class="recipe-badges">
+            <span class="badge">⏱️ ${t('badgePrep')} ${recipe.prepMinutes} ${t('unitMin')}</span>
+            <span class="badge">🔥 ${t('badgeCook')} ${recipe.cookMinutes} ${t('unitMin')}</span>
+            <span class="badge">👥 ${servings} ${t('badgeServings')}</span>
+            <span class="badge badge-difficulty">${difficulty}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="recipe-body">
+        <div class="recipe-col">
+          <h4>${t('ingredientsTitle')}</h4>
+          <ul class="ingredient-list">${ingredientRows}</ul>
+        </div>
+        <div class="recipe-col">
+          <h4>${t('stepsTitle')}</h4>
+          <ol class="step-list">${stepRows}</ol>
+        </div>
+      </div>
+    </article>
   `;
 }

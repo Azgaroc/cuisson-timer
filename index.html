@@ -3,100 +3,135 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#1e1e2f">
+<meta name="theme-color" content="#3E2620">
 <title>Cuisson Timer</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Figtree:wght@500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="app" id="mainApp">
 
-  <header class="app-header">
-    <h1 data-i18n="appName">Cuisson Timer</h1>
-  </header>
-
   <!-- ===== Onglet Accueil ===== -->
   <section class="tab-panel" id="panel-home">
-
-    <!-- Sous-vue 1 : choix du mode (affichée à chaque ouverture de l'app) -->
-    <div class="mode-chooser" id="modeChooser">
-      <h2 data-i18n="chooseModeTitle">Que voulez-vous cuisiner ?</h2>
-      <div class="chooser-modes">
-        <button class="chooser-mode-btn" data-mode="crepe">
-          <span class="chooser-emoji">🥞</span>
-          <span data-i18n="modeCrepe">Crêpe</span>
-        </button>
-        <button class="chooser-mode-btn" data-mode="pancake">
-          <span class="chooser-emoji">🥯</span>
-          <span data-i18n="modePancake">Pancake</span>
-        </button>
-        <button class="chooser-mode-btn" data-mode="gaufre">
-          <span class="chooser-emoji">🧇</span>
-          <span data-i18n="modeGaufre">Gaufre</span>
-        </button>
-      </div>
+    <div class="hero">
+      <p class="hero-eyebrow" data-i18n="appName">Cuisson Timer</p>
+      <h1 data-i18n="heroTitle">Prêt à régaler ?</h1>
+      <p class="hero-subtitle" data-i18n="heroSubtitle">Choisissez ce que vous cuisinez, le minuteur s'occupe du reste.</p>
     </div>
 
-    <!-- Sous-vue 2 : minuteur du mode choisi -->
-    <div class="timer-view" id="timerView" hidden>
+    <div class="mode-chooser">
+      <button class="chooser-mode-btn chooser-mode-btn--crepe" data-mode="crepe">
+        <span class="chooser-badge">🥞</span>
+        <span class="chooser-copy">
+          <span class="chooser-name" data-i18n="modeCrepe">Crêpe</span>
+          <span class="chooser-desc" data-i18n="modeCrepeDesc">Fine et dorée, à la française</span>
+        </span>
+        <span class="chooser-arrow">→</span>
+      </button>
+      <button class="chooser-mode-btn chooser-mode-btn--pancake" data-mode="pancake">
+        <span class="chooser-badge">🥯</span>
+        <span class="chooser-copy">
+          <span class="chooser-name" data-i18n="modePancake">Pancake</span>
+          <span class="chooser-desc" data-i18n="modePancakeDesc">Moelleux et gourmand</span>
+        </span>
+        <span class="chooser-arrow">→</span>
+      </button>
+      <button class="chooser-mode-btn chooser-mode-btn--gaufre" data-mode="gaufre">
+        <span class="chooser-badge">🧇</span>
+        <span class="chooser-copy">
+          <span class="chooser-name" data-i18n="modeGaufre">Gaufre</span>
+          <span class="chooser-desc" data-i18n="modeGaufreDesc">Croustillante dehors, fondante dedans</span>
+        </span>
+        <span class="chooser-arrow">→</span>
+      </button>
+    </div>
 
-      <div class="timer-view-top">
-        <button class="back-btn" id="backToChooserBtn" type="button">
-          🏠 <span data-i18n="btnChangeRecipe">Changer de recette</span>
-        </button>
-        <nav class="mode-selector">
-          <button class="mode-btn" data-mode="crepe" title="Crêpe">🥞</button>
-          <button class="mode-btn" data-mode="pancake" title="Pancake">🥯</button>
-          <button class="mode-btn" data-mode="gaufre" title="Gaufre">🧇</button>
-        </nav>
-      </div>
+    <p class="home-footer" data-i18n="footerTagline">Fait avec 🧈 pour les gourmands</p>
+  </section>
 
-      <main class="timer-section">
-        <div class="step-indicator" id="stepIndicator">Prêt à démarrer</div>
+  <!-- ===== Onglet Minuteur ===== -->
+  <section class="tab-panel hidden" id="panel-minuteur">
 
+    <nav class="mode-selector">
+      <button class="mode-btn" data-mode="crepe">🥞 <span data-i18n="modeCrepe">Crêpe</span></button>
+      <button class="mode-btn" data-mode="pancake">🥯 <span data-i18n="modePancake">Pancake</span></button>
+      <button class="mode-btn" data-mode="gaufre">🧇 <span data-i18n="modeGaufre">Gaufre</span></button>
+    </nav>
+
+    <main class="timer-section">
+      <div class="step-indicator" id="stepIndicator">Prêt à démarrer</div>
+
+      <div class="timer-ring-wrap">
+        <svg class="timer-ring" viewBox="0 0 220 220">
+          <circle class="timer-ring-track" cx="110" cy="110" r="96"></circle>
+          <circle class="timer-ring-progress" id="timerRingProgress" cx="110" cy="110" r="96"></circle>
+        </svg>
         <div class="timer-display" id="timerDisplay">00:00</div>
+      </div>
 
-        <div class="settings-panel" id="settingsPanel">
-          <div class="setting-row" id="face1Row">
-            <label for="face1Duration" id="face1Label">Face 1 (s)</label>
-            <input type="number" id="face1Duration" min="5" max="600" step="1">
-          </div>
-          <div class="setting-row" id="face2Row">
-            <label for="face2Duration" id="face2Label">Face 2 (s)</label>
-            <input type="number" id="face2Duration" min="5" max="600" step="1">
-          </div>
+      <div class="settings-panel" id="settingsPanel">
+        <div class="setting-row" id="face1Row">
+          <label for="face1Duration" id="face1Label">Face 1 (s)</label>
+          <input type="number" id="face1Duration" min="5" max="600" step="1">
         </div>
-
-        <div class="controls">
-          <button id="startPauseBtn" class="btn-large btn-primary" data-i18n="btnStart">Démarrer</button>
-          <button id="resetFinishBtn" class="btn-large btn-secondary" data-i18n="btnFinish">Terminé</button>
+        <div class="setting-row" id="face2Row">
+          <label for="face2Duration" id="face2Label">Face 2 (s)</label>
+          <input type="number" id="face2Duration" min="5" max="600" step="1">
         </div>
+      </div>
 
-        <button id="mainActionBtn" class="btn-large btn-action" hidden>Nouvelle crêpe</button>
-      </main>
+      <div class="controls">
+        <button id="startPauseBtn" class="btn-large btn-primary" data-i18n="btnStart">Démarrer</button>
+        <button id="resetFinishBtn" class="btn-large btn-secondary" data-i18n="btnFinish">Terminé</button>
+      </div>
 
-      <section class="counters-section">
-        <h2 id="counterTitle">Compteur</h2>
-        <div class="counters-grid">
-          <div class="counter-card total" id="activeCounterCard">
-            <span class="counter-label" id="activeCounterLabel">🥞 Crêpes</span>
-            <span class="counter-value" id="activeCounterValue">0</span>
-          </div>
+      <button id="mainActionBtn" class="btn-large btn-action" hidden>Nouvelle crêpe</button>
+    </main>
+
+    <section class="counters-section">
+      <h2 id="counterTitle">Compteur du jour</h2>
+      <div class="counters-grid">
+        <div class="counter-card" data-mode="crepe">
+          <button class="counter-reset" data-mode="crepe" aria-label="Reset">↺</button>
+          <span class="counter-emoji">🥞</span>
+          <span class="counter-value" id="counterValue-crepe">0</span>
+          <span class="counter-label" data-i18n="modeCrepe">Crêpes</span>
         </div>
-        <button id="resetCounterBtn" class="btn-small" data-i18n="resetCounterBtn">Remettre le compteur à zéro</button>
-      </section>
-
-    </div>
+        <div class="counter-card" data-mode="pancake">
+          <button class="counter-reset" data-mode="pancake" aria-label="Reset">↺</button>
+          <span class="counter-emoji">🥯</span>
+          <span class="counter-value" id="counterValue-pancake">0</span>
+          <span class="counter-label" data-i18n="modePancake">Pancakes</span>
+        </div>
+        <div class="counter-card" data-mode="gaufre">
+          <button class="counter-reset" data-mode="gaufre" aria-label="Reset">↺</button>
+          <span class="counter-emoji">🧇</span>
+          <span class="counter-value" id="counterValue-gaufre">0</span>
+          <span class="counter-label" data-i18n="modeGaufre">Gaufres</span>
+        </div>
+        <div class="counter-card counter-card--total">
+          <span class="counter-emoji">🎉</span>
+          <span class="counter-value" id="counterValue-total">0</span>
+          <span class="counter-label" data-i18n="counterTotalLabel">Total</span>
+        </div>
+      </div>
+    </section>
 
   </section>
 
   <!-- ===== Onglet Recettes ===== -->
   <section class="tab-panel hidden" id="panel-recipes">
-    <h2 data-i18n="recipesTitle">Recettes classiques</h2>
+    <div class="page-head">
+      <h1 data-i18n="recipesTitle">Recettes classiques</h1>
+      <p data-i18n="recipesSubtitle">De bonnes bases, ajustées au nombre de convives.</p>
+    </div>
     <div class="servings-row">
       <label for="servingsInput" data-i18n="recipesServings">Nombre de personnes</label>
       <input type="number" id="servingsInput" min="1" max="20" value="4">
@@ -106,46 +141,66 @@
 
   <!-- ===== Onglet Réglages ===== -->
   <section class="tab-panel hidden" id="panel-settings">
-    <h2 data-i18n="tabSettings">Réglages</h2>
-
-    <div class="setting-block">
-      <label data-i18n="settingsLanguage">Langue</label>
-      <select id="languageSelect">
-        <option value="fr">Français</option>
-        <option value="en">English</option>
-        <option value="es">Español</option>
-        <option value="de">Deutsch</option>
-        <option value="pt">Português</option>
-      </select>
+    <div class="page-head">
+      <h1 data-i18n="tabSettings">Réglages</h1>
     </div>
 
-    <div class="setting-block toggle-row">
-      <label data-i18n="settingsSound">Son</label>
-      <label class="switch">
-        <input type="checkbox" id="soundToggle" checked>
-        <span class="slider"></span>
-      </label>
+    <div class="settings-group">
+      <h2 data-i18n="settingsSectionGeneral">Général</h2>
+      <div class="setting-block">
+        <label data-i18n="settingsLanguage">Langue</label>
+        <select id="languageSelect">
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="de">Deutsch</option>
+          <option value="pt">Português</option>
+        </select>
+      </div>
+      <div class="setting-block">
+        <div>
+          <label data-i18n="settingsDefaultDurations">Durées par défaut</label>
+          <p class="hint-text" data-i18n="settingsDefaultDurationsHint">Modifiables directement dans l'onglet Minuteur pour chaque mode.</p>
+        </div>
+      </div>
     </div>
 
-    <div class="setting-block toggle-row">
-      <label data-i18n="settingsVibration">Vibration</label>
-      <label class="switch">
-        <input type="checkbox" id="vibrationToggle" checked>
-        <span class="slider"></span>
-      </label>
+    <div class="settings-group">
+      <h2 data-i18n="settingsSectionNotifications">Notifications</h2>
+      <div class="setting-block toggle-row">
+        <div>
+          <label data-i18n="settingsSound">Son</label>
+          <p class="hint-text" data-i18n="settingsSoundHint">Bips de décompte et alerte de fin de cuisson</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="soundToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-block toggle-row">
+        <div>
+          <label data-i18n="settingsVibration">Vibration</label>
+          <p class="hint-text" data-i18n="settingsVibrationHint">Retour haptique pendant la cuisson</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="vibrationToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
 
-    <div class="setting-block toggle-row">
-      <label data-i18n="settingsDarkMode">Mode sombre</label>
-      <label class="switch">
-        <input type="checkbox" id="darkModeToggle">
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="setting-block">
-      <label data-i18n="settingsDefaultDurations">Durées par défaut</label>
-      <p class="hint-text" data-i18n="settingsDefaultDurationsHint">Modifiables directement dans l'onglet Accueil pour chaque mode.</p>
+    <div class="settings-group">
+      <h2 data-i18n="settingsSectionAppearance">Apparence</h2>
+      <div class="setting-block toggle-row">
+        <div>
+          <label data-i18n="settingsDarkMode">Mode sombre</label>
+          <p class="hint-text" data-i18n="settingsDarkModeHint">Idéal pour une cuisine tamisée</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="darkModeToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
   </section>
 
@@ -156,6 +211,10 @@
   <button class="tab-btn active" data-tab="home">
     <span class="tab-icon">🏠</span>
     <span data-i18n="tabHome">Accueil</span>
+  </button>
+  <button class="tab-btn" data-tab="minuteur">
+    <span class="tab-icon">⏱️</span>
+    <span data-i18n="tabMinuteur">Minuteur</span>
   </button>
   <button class="tab-btn" data-tab="recipes">
     <span class="tab-icon">📖</span>

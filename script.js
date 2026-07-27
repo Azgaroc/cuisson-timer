@@ -44,6 +44,7 @@ let state = {
   isRunning: false,
   currentStep: 'idle', // idle | face1 | face2 | done
   remainingSeconds: 0,
+  currentStepTotal: 0,
   lastBeepedSecond: null,
   settings: loadSettings(),
   counters: loadCounters(),
@@ -58,21 +59,20 @@ const el = {};
 function cacheDom() {
   el.mainApp = document.getElementById('mainApp');
 
-  el.modeChooser = document.getElementById('modeChooser');
-  el.timerView = document.getElementById('timerView');
-  el.chooserModeButtons = document.querySelectorAll('.chooser-mode-btn');
-  el.backToChooserBtn = document.getElementById('backToChooserBtn');
+  el.chooserModeButtons = document.querySelectorAll('#panel-home .chooser-mode-btn');
 
   el.tabButtons = document.querySelectorAll('.bottom-tabs .tab-btn');
   el.panels = {
     home: document.getElementById('panel-home'),
+    minuteur: document.getElementById('panel-minuteur'),
     recipes: document.getElementById('panel-recipes'),
     settings: document.getElementById('panel-settings')
   };
 
-  el.modeButtons = document.querySelectorAll('.mode-selector .mode-btn');
+  el.modeButtons = document.querySelectorAll('#panel-minuteur .mode-selector .mode-btn');
   el.stepIndicator = document.getElementById('stepIndicator');
   el.timerDisplay = document.getElementById('timerDisplay');
+  el.timerRingProgress = document.getElementById('timerRingProgress');
   el.face1Row = document.getElementById('face1Row');
   el.face2Row = document.getElementById('face2Row');
   el.face1Label = document.getElementById('face1Label');
@@ -84,9 +84,14 @@ function cacheDom() {
   el.mainActionBtn = document.getElementById('mainActionBtn');
 
   el.counterTitle = document.getElementById('counterTitle');
-  el.activeCounterLabel = document.getElementById('activeCounterLabel');
-  el.activeCounterValue = document.getElementById('activeCounterValue');
-  el.resetCounterBtn = document.getElementById('resetCounterBtn');
+  el.counterValues = {
+    crepe: document.getElementById('counterValue-crepe'),
+    pancake: document.getElementById('counterValue-pancake'),
+    gaufre: document.getElementById('counterValue-gaufre'),
+    total: document.getElementById('counterValue-total')
+  };
+  el.counterCards = document.querySelectorAll('.counter-card[data-mode]');
+  el.counterResetButtons = document.querySelectorAll('.counter-reset');
 
   el.servingsInput = document.getElementById('servingsInput');
   el.recipeContainer = document.getElementById('recipeContainer');
@@ -165,42 +170,17 @@ function t(key) {
 }
 
 // ----------------------------------------------------------------
-// Onglet Accueil : choix du mode (à chaque ouverture) + minuteur
+// Onglet Accueil : choix du mode (affiché à chaque ouverture)
 // ----------------------------------------------------------------
 function initHomeChooser() {
   el.chooserModeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       unlockAudio();
       state.currentMode = btn.dataset.mode;
-      showTimerView();
+      renderModeUI();
+      switchTab('minuteur');
     });
   });
-
-  el.backToChooserBtn.addEventListener('click', () => {
-    showChooser();
-  });
-}
-
-function showTimerView() {
-  el.modeChooser.hidden = true;
-  el.timerView.hidden = false;
-  renderModeUI();
-}
-
-// Revient à l'écran de choix de recette. Demande confirmation si un
-// cycle de cuisson est en cours, pour ne pas le perdre par erreur.
-function showChooser() {
-  if (state.isRunning || (state.currentStep !== 'idle' && state.currentStep !== 'done')) {
-    const confirmed = confirm(t('confirmCancelCycle'));
-    if (!confirmed) return;
-  }
-  clearInterval(state.timerId);
-  state.timerId = null;
-  state.isRunning = false;
-  state.currentStep = 'idle';
-
-  el.timerView.hidden = true;
-  el.modeChooser.hidden = false;
 }
 
 // ----------------------------------------------------------------
@@ -221,16 +201,7 @@ function switchTab(tabName) {
 
 function initTabs() {
   el.tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tabName = btn.dataset.tab;
-      // Retaper sur l'onglet Accueil alors qu'il est déjà actif ramène
-      // à l'écran de choix de recette (pratique pour changer d'avis).
-      if (tabName === 'home' && state.activeTab === 'home') {
-        showChooser();
-        return;
-      }
-      switchTab(tabName);
-    });
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 }
 
@@ -262,12 +233,26 @@ function renderModeUI() {
   resetCycleUI();
 }
 
-function renderCounter() {
-  const modeConfig = MODES[state.currentMode];
-  const labelKey = { crepe: 'modeCrepe', pancake: 'modePancake', gaufre: 'modeGaufre' }[state.currentMode];
+function renderCounter(bumpMode) {
   el.counterTitle.textContent = t('counterLabel');
-  el.activeCounterLabel.textContent = `${modeConfig.emoji} ${t(labelKey)}`;
-  el.activeCounterValue.textContent = state.counters[state.currentMode];
+  let total = 0;
+  Object.keys(el.counterValues).forEach(key => {
+    if (key === 'total') return;
+    const value = state.counters[key] || 0;
+    total += value;
+    el.counterValues[key].textContent = value;
+  });
+  el.counterValues.total.textContent = total;
+
+  if (bumpMode) {
+    const card = document.querySelector(`.counter-card[data-mode="${bumpMode}"]`);
+    if (card) {
+      card.classList.remove('bump');
+      // force reflow pour pouvoir relancer l'animation si elle vient de jouer
+      void card.offsetWidth;
+      card.classList.add('bump');
+    }
+  }
 }
 
 function formatTime(totalSeconds) {
@@ -276,9 +261,19 @@ function formatTime(totalSeconds) {
   return `${m}:${s}`;
 }
 
+const RING_CIRCUMFERENCE = 603.19;
+
 function updateTimerDisplay() {
   el.timerDisplay.textContent = formatTime(state.remainingSeconds);
   el.timerDisplay.classList.toggle('countdown', state.remainingSeconds <= COUNTDOWN_THRESHOLD && state.remainingSeconds > 0 && state.isRunning);
+
+  const total = state.currentStepTotal || 1;
+  const fraction = Math.max(0, Math.min(1, state.remainingSeconds / total));
+  el.timerRingProgress.style.strokeDashoffset = RING_CIRCUMFERENCE * fraction;
+}
+
+function setRingState(cssClass) {
+  el.timerRingProgress.className = 'timer-ring-progress' + (cssClass ? ' ' + cssClass : '');
 }
 
 function setStepIndicator(text, cssClass) {
@@ -299,7 +294,9 @@ function resetCycleUI() {
   el.mainActionBtn.hidden = true;
   setSettingsInputsDisabled(false);
   state.remainingSeconds = getDuration('face1');
+  state.currentStepTotal = state.remainingSeconds;
   updateTimerDisplay();
+  setRingState();
   setStepIndicator(t('stepReady'));
 }
 
@@ -337,7 +334,9 @@ function startCycle() {
   if (state.currentStep === 'idle' || state.currentStep === 'done') {
     state.currentStep = 'face1';
     state.remainingSeconds = getDuration('face1');
+    state.currentStepTotal = state.remainingSeconds;
     setStepIndicator(t('stepFace1'));
+    setRingState();
   }
 
   runTick();
@@ -384,7 +383,9 @@ function handleStepEnd() {
       state.currentStep = 'face2';
       state.lastBeepedSecond = null;
       setStepIndicator(t('stepFlip'), 'flip');
+      setRingState('state-flip');
       state.remainingSeconds = getDuration('face2');
+      state.currentStepTotal = state.remainingSeconds;
       updateTimerDisplay();
       vibrate([200, 100, 200]);
 
@@ -392,6 +393,7 @@ function handleStepEnd() {
       setTimeout(() => {
         if (state.currentStep === 'face2') {
           setStepIndicator(t('stepFace2'));
+          setRingState();
           runTick();
         }
       }, 1500);
@@ -411,6 +413,7 @@ function finishCycle() {
   state.remainingSeconds = 0;
   updateTimerDisplay();
   setStepIndicator(t('stepDone'), 'done');
+  setRingState('state-done');
   el.startPauseBtn.hidden = true;
   el.mainActionBtn.hidden = false;
   setSettingsInputsDisabled(false);
@@ -510,15 +513,15 @@ function handleResetFinishClick() {
 function handleMainActionClick() {
   state.counters[state.currentMode]++;
   saveCounters();
-  renderCounter();
+  renderCounter(state.currentMode);
   resetCycleUI();
   startCycle();
 }
 
-function handleResetCounterClick() {
+function handleResetCounterClick(mode) {
   const confirmed = confirm(t('confirmResetCounter'));
   if (!confirmed) return;
-  state.counters[state.currentMode] = 0;
+  state.counters[mode] = 0;
   saveCounters();
   renderCounter();
 }
@@ -537,7 +540,9 @@ function handleModeChange(newMode) {
 // ----------------------------------------------------------------
 function renderRecipesTab() {
   const servings = parseInt(el.servingsInput.value, 10) || 4;
-  el.recipeContainer.innerHTML = renderRecipe(state.currentMode, servings);
+  el.recipeContainer.innerHTML = ['crepe', 'pancake', 'gaufre']
+    .map(mode => renderRecipe(mode, servings))
+    .join('');
 }
 
 function initRecipesTab() {
@@ -597,7 +602,9 @@ function initTimerEvents() {
   el.startPauseBtn.addEventListener('click', handleStartPauseClick);
   el.resetFinishBtn.addEventListener('click', handleResetFinishClick);
   el.mainActionBtn.addEventListener('click', handleMainActionClick);
-  el.resetCounterBtn.addEventListener('click', handleResetCounterClick);
+  el.counterResetButtons.forEach(btn => {
+    btn.addEventListener('click', () => handleResetCounterClick(btn.dataset.mode));
+  });
 
   el.face1Duration.addEventListener('change', () => {
     if (state.currentStep === 'idle') persistCurrentDurations();
@@ -614,9 +621,8 @@ function init() {
   cacheDom();
   applyDarkMode();
   translateStaticUI();
+  renderModeUI();
   switchTab('home');
-  el.timerView.hidden = true;
-  el.modeChooser.hidden = false;
   initHomeChooser();
   initTabs();
   initTimerEvents();
