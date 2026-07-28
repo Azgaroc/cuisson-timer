@@ -15,7 +15,7 @@ const MODES = {
     // Même icône que celle définie dans recipes.js (CREPE_ICON_SVG) : on ne
     // redéclare pas la constante ici pour éviter un conflit de nom entre
     // fichiers chargés dans la même portée globale.
-    emoji: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="9" width="16.5" height="7" rx="3.5" fill="#F6D9A0" stroke="#B97A3D" stroke-width="0.9"/><path d="M8 9.3 L8 15.7 M12 9.1 L12 15.9 M16 9.3 L16 15.7" stroke="#C9954F" stroke-width="0.7" opacity="0.55" stroke-linecap="round"/><path d="M4.5 7.8 Q8 3.8 11.5 6.8 T19 5.6" fill="none" stroke="#7A4A26" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="19.2" cy="13.5" r="2.1" fill="#D5495F"/><path d="M18.9 12.5 Q19.5 11.3 20.4 12.1" stroke="#5C8A4A" stroke-width="0.9" fill="none" stroke-linecap="round"/></svg>'
+    emoji: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M4 13 A8 8 0 0 1 20 13 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1"/><path d="M6 13 Q12 11 18 13" fill="none" stroke="#C9954F" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/><circle cx="10" cy="9.3" r="0.85" fill="#A8551C" opacity="0.75"/><circle cx="14.7" cy="9.8" r="0.7" fill="#A8551C" opacity="0.75"/><circle cx="12.2" cy="7.3" r="0.55" fill="#A8551C" opacity="0.7"/></svg>'
   },
   pancake: {
     hasTwoFaces: true,
@@ -56,7 +56,8 @@ let state = {
   prefs: loadPrefs(),
   history: loadHistory(),
   sessionCounts: { crepe: 0, pancake: 0, gaufre: 0 }, // non persistant, remis à zéro à chaque ouverture
-  calendarViewDate: new Date()
+  calendarViewDate: new Date(),
+  dayDetailDate: null
 };
 
 // ----------------------------------------------------------------
@@ -114,6 +115,12 @@ function cacheDom() {
   el.calendarPrevBtn = document.getElementById('calendarPrevBtn');
   el.calendarNextBtn = document.getElementById('calendarNextBtn');
   el.achievementsGrid = document.getElementById('achievementsGrid');
+
+  el.dayDetail = document.getElementById('dayDetail');
+  el.dayDetailTitle = document.getElementById('dayDetailTitle');
+  el.dayDetailItems = document.getElementById('dayDetailItems');
+  el.dayDetailClose = document.getElementById('dayDetailClose');
+  el.dayDetailDeleteAll = document.getElementById('dayDetailDeleteAll');
 
   el.languageSelect = document.getElementById('languageSelect');
   el.soundToggle = document.getElementById('soundToggle');
@@ -669,7 +676,7 @@ const ACHIEVEMENTS = [
   { id: 'ten', icon: '🔟', titleKey: 'achTenTitle', descKey: 'achTenDesc', check: (total, c, days) => total >= 10 },
   { id: 'fifty', icon: '🎖️', titleKey: 'achFiftyTitle', descKey: 'achFiftyDesc', check: (total, c, days) => total >= 50 },
   { id: 'hundred', icon: '🏆', titleKey: 'achHundredTitle', descKey: 'achHundredDesc', check: (total, c, days) => total >= 100 },
-  { id: 'crepe', icon: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="9" width="16.5" height="7" rx="3.5" fill="#F6D9A0" stroke="#B97A3D" stroke-width="0.9"/><path d="M8 9.3 L8 15.7 M12 9.1 L12 15.9 M16 9.3 L16 15.7" stroke="#C9954F" stroke-width="0.7" opacity="0.55" stroke-linecap="round"/><path d="M4.5 7.8 Q8 3.8 11.5 6.8 T19 5.6" fill="none" stroke="#7A4A26" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="19.2" cy="13.5" r="2.1" fill="#D5495F"/><path d="M18.9 12.5 Q19.5 11.3 20.4 12.1" stroke="#5C8A4A" stroke-width="0.9" fill="none" stroke-linecap="round"/></svg>', titleKey: 'achCrepeTitle', descKey: 'achCrepeDesc', check: (total, c) => c.crepe >= 10 },
+  { id: 'crepe', icon: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M4 13 A8 8 0 0 1 20 13 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1"/><path d="M6 13 Q12 11 18 13" fill="none" stroke="#C9954F" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/><circle cx="10" cy="9.3" r="0.85" fill="#A8551C" opacity="0.75"/><circle cx="14.7" cy="9.8" r="0.7" fill="#A8551C" opacity="0.75"/><circle cx="12.2" cy="7.3" r="0.55" fill="#A8551C" opacity="0.7"/></svg>', titleKey: 'achCrepeTitle', descKey: 'achCrepeDesc', check: (total, c) => c.crepe >= 10 },
   { id: 'pancake', icon: '🥞', titleKey: 'achPancakeTitle', descKey: 'achPancakeDesc', check: (total, c) => c.pancake >= 10 },
   { id: 'gaufre', icon: '🧇', titleKey: 'achGaufreTitle', descKey: 'achGaufreDesc', check: (total, c) => c.gaufre >= 10 },
   { id: 'allrounder', icon: '🎩', titleKey: 'achAllRounderTitle', descKey: 'achAllRounderDesc', check: (total, c) => c.crepe >= 1 && c.pancake >= 1 && c.gaufre >= 1 },
@@ -685,6 +692,118 @@ function getHistoryDayMap() {
     map[key] = (map[key] || 0) + 1;
   });
   return map;
+}
+
+// ----------------------------------------------------------------
+// Détail d'un jour du calendrier : voir/corriger/supprimer une entrée
+// ----------------------------------------------------------------
+function getEntriesForDay(year, month, day) {
+  return state.history
+    .map((entry, idx) => ({ ...entry, idx }))
+    .filter(entry => {
+      const d = new Date(entry.ts);
+      return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+    });
+}
+
+function removeOneEntry(mode, year, month, day) {
+  const entries = getEntriesForDay(year, month, day).filter(e => e.mode === mode);
+  if (entries.length === 0) return;
+  const target = entries[entries.length - 1];
+  state.history.splice(target.idx, 1);
+  state.counters[mode] = Math.max(0, (state.counters[mode] || 0) - 1);
+  saveHistory();
+  saveCounters();
+}
+
+function removeAllEntriesForDay(year, month, day) {
+  const entries = getEntriesForDay(year, month, day);
+  const byMode = {};
+  entries.forEach(e => { byMode[e.mode] = (byMode[e.mode] || 0) + 1; });
+  Object.keys(byMode).forEach(mode => {
+    state.counters[mode] = Math.max(0, (state.counters[mode] || 0) - byMode[mode]);
+  });
+  entries.sort((a, b) => b.idx - a.idx).forEach(e => state.history.splice(e.idx, 1));
+  saveHistory();
+  saveCounters();
+}
+
+function openDayDetail(year, month, day) {
+  state.dayDetailDate = { year, month, day };
+  renderDayDetail();
+  el.dayDetail.classList.remove('hidden');
+}
+
+function closeDayDetail() {
+  state.dayDetailDate = null;
+  el.dayDetail.classList.add('hidden');
+}
+
+function renderDayDetail() {
+  if (!state.dayDetailDate) return;
+  const { year, month, day } = state.dayDetailDate;
+  const entries = getEntriesForDay(year, month, day);
+
+  const dateObj = new Date(year, month, day);
+  el.dayDetailTitle.textContent = dateObj.toLocaleDateString(state.prefs.language || 'fr', {
+    weekday: 'long', day: 'numeric', month: 'long'
+  });
+
+  const byMode = { crepe: 0, pancake: 0, gaufre: 0 };
+  entries.forEach(e => { byMode[e.mode] = (byMode[e.mode] || 0) + 1; });
+
+  const labelKeys = { crepe: 'modeCrepe', pancake: 'modePancake', gaufre: 'modeGaufre' };
+  const icons = { crepe: MODES.crepe.emoji, pancake: MODES.pancake.emoji, gaufre: MODES.gaufre.emoji };
+
+  el.dayDetailItems.innerHTML = Object.keys(byMode)
+    .filter(mode => byMode[mode] > 0)
+    .map(mode => `
+      <div class="day-detail-item">
+        <span class="day-detail-icon">${icons[mode]}</span>
+        <span class="day-detail-label">${t(labelKeys[mode])}</span>
+        <span class="day-detail-count">${byMode[mode]}</span>
+        <button class="day-detail-minus" data-mode="${mode}" aria-label="-1">−</button>
+      </div>
+    `).join('');
+
+  if (entries.length === 0) {
+    closeDayDetail();
+  }
+}
+
+function initCalendarInteractions() {
+  el.calendarGrid.addEventListener('click', (event) => {
+    const cell = event.target.closest('.cal-cell.has-activity');
+    if (!cell) return;
+    openDayDetail(parseInt(cell.dataset.year, 10), parseInt(cell.dataset.month, 10), parseInt(cell.dataset.day, 10));
+  });
+
+  el.dayDetailClose.addEventListener('click', closeDayDetail);
+
+  el.dayDetailItems.addEventListener('click', (event) => {
+    const btn = event.target.closest('.day-detail-minus');
+    if (!btn || !state.dayDetailDate) return;
+    const { year, month, day } = state.dayDetailDate;
+    removeOneEntry(btn.dataset.mode, year, month, day);
+    renderDayDetail();
+    renderCalendar();
+    renderAchievements();
+    renderStatsTotal();
+    if (state.currentMode) renderCounter();
+  });
+
+  el.dayDetailDeleteAll.addEventListener('click', () => {
+    if (!state.dayDetailDate) return;
+    const confirmed = confirm(t('confirmDeleteDay'));
+    if (!confirmed) return;
+    const { year, month, day } = state.dayDetailDate;
+    removeAllEntriesForDay(year, month, day);
+    closeDayDetail();
+    renderCalendar();
+    renderAchievements();
+    renderStatsTotal();
+    renderCounter();
+  });
 }
 
 function renderStatsTotal() {
@@ -721,10 +840,18 @@ function renderCalendar() {
     const classes = ['cal-cell'];
     if (count > 0) classes.push('has-activity');
     if (key === todayKey) classes.push('is-today');
-    html += `<div class="${classes.join(' ')}"><span class="cal-day-num">${day}</span>${count > 0 ? `<span class="cal-dot">${count}</span>` : ''}</div>`;
+    const dataAttrs = count > 0 ? `data-year="${year}" data-month="${month}" data-day="${day}"` : '';
+    html += `<div class="${classes.join(' ')}" ${dataAttrs}><span class="cal-day-num">${day}</span>${count > 0 ? `<span class="cal-dot">${count}</span>` : ''}</div>`;
   }
 
   el.calendarGrid.innerHTML = html;
+
+  // Si le panneau de détail est ouvert sur un jour qui vient d'être modifié
+  // (ex: après une suppression), on le referme pour éviter un état incohérent.
+  if (el.dayDetail && !el.dayDetail.classList.contains('hidden')) {
+    const key = `${state.dayDetailDate?.year}-${state.dayDetailDate?.month}-${state.dayDetailDate?.day}`;
+    if (!dayMap[key]) closeDayDetail();
+  }
 }
 
 function renderAchievements() {
@@ -753,13 +880,16 @@ function renderStatsTab() {
 
 function initStatsTab() {
   el.calendarPrevBtn.addEventListener('click', () => {
+    closeDayDetail();
     state.calendarViewDate = new Date(state.calendarViewDate.getFullYear(), state.calendarViewDate.getMonth() - 1, 1);
     renderCalendar();
   });
   el.calendarNextBtn.addEventListener('click', () => {
+    closeDayDetail();
     state.calendarViewDate = new Date(state.calendarViewDate.getFullYear(), state.calendarViewDate.getMonth() + 1, 1);
     renderCalendar();
   });
+  initCalendarInteractions();
 }
 
 // ----------------------------------------------------------------
