@@ -15,7 +15,7 @@ const MODES = {
     // Même icône que celle définie dans recipes.js (CREPE_ICON_SVG) : on ne
     // redéclare pas la constante ici pour éviter un conflit de nom entre
     // fichiers chargés dans la même portée globale.
-    emoji: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M12 21 L4 8.5 A9 9 0 0 1 20 8.5 Z" fill="#F0C878"/><path d="M4 8.5 A9 9 0 0 1 20 8.5" fill="none" stroke="#A8551C" stroke-width="1.3" stroke-linecap="round"/><path d="M8 9.5 Q12 12 16 9.5" fill="none" stroke="#FFF3DC" stroke-width="1.1" stroke-linecap="round" opacity="0.85"/><circle cx="10.3" cy="12.5" r="0.9" fill="#A8551C" opacity="0.8"/><circle cx="14.2" cy="14" r="0.8" fill="#A8551C" opacity="0.8"/><circle cx="11.8" cy="17" r="0.7" fill="#A8551C" opacity="0.8"/></svg>'
+    emoji: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="9" width="16.5" height="7" rx="3.5" fill="#F6D9A0" stroke="#B97A3D" stroke-width="0.9"/><path d="M8 9.3 L8 15.7 M12 9.1 L12 15.9 M16 9.3 L16 15.7" stroke="#C9954F" stroke-width="0.7" opacity="0.55" stroke-linecap="round"/><path d="M4.5 7.8 Q8 3.8 11.5 6.8 T19 5.6" fill="none" stroke="#7A4A26" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="19.2" cy="13.5" r="2.1" fill="#D5495F"/><path d="M18.9 12.5 Q19.5 11.3 20.4 12.1" stroke="#5C8A4A" stroke-width="0.9" fill="none" stroke-linecap="round"/></svg>'
   },
   pancake: {
     hasTwoFaces: true,
@@ -669,7 +669,7 @@ const ACHIEVEMENTS = [
   { id: 'ten', icon: '🔟', titleKey: 'achTenTitle', descKey: 'achTenDesc', check: (total, c, days) => total >= 10 },
   { id: 'fifty', icon: '🎖️', titleKey: 'achFiftyTitle', descKey: 'achFiftyDesc', check: (total, c, days) => total >= 50 },
   { id: 'hundred', icon: '🏆', titleKey: 'achHundredTitle', descKey: 'achHundredDesc', check: (total, c, days) => total >= 100 },
-  { id: 'crepe', icon: '🫓', titleKey: 'achCrepeTitle', descKey: 'achCrepeDesc', check: (total, c) => c.crepe >= 10 },
+  { id: 'crepe', icon: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="9" width="16.5" height="7" rx="3.5" fill="#F6D9A0" stroke="#B97A3D" stroke-width="0.9"/><path d="M8 9.3 L8 15.7 M12 9.1 L12 15.9 M16 9.3 L16 15.7" stroke="#C9954F" stroke-width="0.7" opacity="0.55" stroke-linecap="round"/><path d="M4.5 7.8 Q8 3.8 11.5 6.8 T19 5.6" fill="none" stroke="#7A4A26" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="19.2" cy="13.5" r="2.1" fill="#D5495F"/><path d="M18.9 12.5 Q19.5 11.3 20.4 12.1" stroke="#5C8A4A" stroke-width="0.9" fill="none" stroke-linecap="round"/></svg>', titleKey: 'achCrepeTitle', descKey: 'achCrepeDesc', check: (total, c) => c.crepe >= 10 },
   { id: 'pancake', icon: '🥞', titleKey: 'achPancakeTitle', descKey: 'achPancakeDesc', check: (total, c) => c.pancake >= 10 },
   { id: 'gaufre', icon: '🧇', titleKey: 'achGaufreTitle', descKey: 'achGaufreDesc', check: (total, c) => c.gaufre >= 10 },
   { id: 'allrounder', icon: '🎩', titleKey: 'achAllRounderTitle', descKey: 'achAllRounderDesc', check: (total, c) => c.crepe >= 1 && c.pancake >= 1 && c.gaufre >= 1 },

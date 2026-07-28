@@ -3,10 +3,12 @@
 // Quantités de base pour 4 personnes, recalculées dynamiquement.
 // ===================================================================
 
+const CREPE_ICON_SVG = '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="9" width="16.5" height="7" rx="3.5" fill="#F6D9A0" stroke="#B97A3D" stroke-width="0.9"/><path d="M8 9.3 L8 15.7 M12 9.1 L12 15.9 M16 9.3 L16 15.7" stroke="#C9954F" stroke-width="0.7" opacity="0.55" stroke-linecap="round"/><path d="M4.5 7.8 Q8 3.8 11.5 6.8 T19 5.6" fill="none" stroke="#7A4A26" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="19.2" cy="13.5" r="2.1" fill="#D5495F"/><path d="M18.9 12.5 Q19.5 11.3 20.4 12.1" stroke="#5C8A4A" stroke-width="0.9" fill="none" stroke-linecap="round"/></svg>';
+
 const RECIPES = {
   crepe: {
     nameKey: "recipeCrepeName",
-    emoji: "🫓",
+    emoji: CREPE_ICON_SVG,
     baseServings: 4,
     baseYield: 12,
     prepMinutes: 10,
