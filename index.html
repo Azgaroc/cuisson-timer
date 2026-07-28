@@ -79,12 +79,18 @@
 
       <div class="settings-panel" id="settingsPanel">
         <div class="setting-row" id="face1Row">
-          <label for="face1Duration" id="face1Label">Face 1 (s)</label>
-          <input type="number" id="face1Duration" min="5" max="600" step="1">
+          <label for="face1Duration" id="face1Label">Face 1</label>
+          <div class="input-unit">
+            <input type="number" id="face1Duration" min="5" max="600" step="1">
+            <span class="unit" data-i18n="unitSeconds">s</span>
+          </div>
         </div>
         <div class="setting-row" id="face2Row">
-          <label for="face2Duration" id="face2Label">Face 2 (s)</label>
-          <input type="number" id="face2Duration" min="5" max="600" step="1">
+          <label for="face2Duration" id="face2Label">Face 2</label>
+          <div class="input-unit">
+            <input type="number" id="face2Duration" min="5" max="600" step="1">
+            <span class="unit" data-i18n="unitSeconds">s</span>
+          </div>
         </div>
       </div>
 
@@ -106,6 +112,15 @@
           <span class="counter-label" id="activeCounterLabel">Crêpes</span>
         </div>
       </div>
+
+      <div class="session-summary hidden" id="sessionSummary">
+        <span class="session-title" data-i18n="sessionSummaryTitle">Cette session</span>
+        <div class="session-items">
+          <span class="session-item">🫓 <span id="sessionCrepeValue">0</span></span>
+          <span class="session-item">🥞 <span id="sessionPancakeValue">0</span></span>
+          <span class="session-item">🧇 <span id="sessionGaufreValue">0</span></span>
+        </div>
+      </div>
     </section>
 
   </section>
@@ -121,6 +136,37 @@
       <input type="number" id="servingsInput" min="1" max="20" value="4">
     </div>
     <div id="recipeContainer"></div>
+  </section>
+
+  <!-- ===== Onglet Stats ===== -->
+  <section class="tab-panel hidden" id="panel-stats">
+    <div class="page-head">
+      <h1 data-i18n="tabStats">Stats</h1>
+    </div>
+
+    <div class="stats-total-card">
+      <span class="stats-total-title" data-i18n="statsTotalTitle">Total réalisé</span>
+      <span class="stats-total-value" id="statsTotalValue">0</span>
+      <span class="stats-total-unit" data-i18n="statsTotalUnit">préparations</span>
+    </div>
+
+    <div class="stats-block">
+      <h2 data-i18n="calendarTitle">Historique</h2>
+      <div class="calendar-card">
+        <div class="calendar-nav">
+          <button id="calendarPrevBtn" class="cal-nav-btn" aria-label="Mois précédent">‹</button>
+          <span id="calendarMonthLabel" class="calendar-month-label"></span>
+          <button id="calendarNextBtn" class="cal-nav-btn" aria-label="Mois suivant">›</button>
+        </div>
+        <div class="calendar-weekdays" id="calendarWeekdays"></div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+    </div>
+
+    <div class="stats-block">
+      <h2 data-i18n="achievementsTitle">Trophées</h2>
+      <div class="achievements-grid" id="achievementsGrid"></div>
+    </div>
   </section>
 
   <!-- ===== Onglet Réglages ===== -->
@@ -203,6 +249,10 @@
   <button class="tab-btn" data-tab="recipes">
     <span class="tab-icon">📖</span>
     <span data-i18n="tabRecipes">Recettes</span>
+  </button>
+  <button class="tab-btn" data-tab="stats">
+    <span class="tab-icon">🏆</span>
+    <span data-i18n="tabStats">Stats</span>
   </button>
   <button class="tab-btn" data-tab="settings">
     <span class="tab-icon">⚙️</span>

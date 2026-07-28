@@ -32,7 +32,8 @@ const MODES = {
 const STORAGE_KEYS = {
   settings: 'cuissonTimer.settings',
   counters: 'cuissonTimer.counters',
-  prefs: 'cuissonTimer.prefs'
+  prefs: 'cuissonTimer.prefs',
+  history: 'cuissonTimer.history'
 };
 
 const COUNTDOWN_THRESHOLD = 5; // déclenche les bips à partir de 5s restantes
@@ -48,10 +49,14 @@ let state = {
   currentStep: 'idle', // idle | face1 | face2 | done
   remainingSeconds: 0,
   currentStepTotal: 0,
+  stepEndTime: null, // horodatage (ms) de fin d'étape prévue, pour rester fiable en arrière-plan
   lastBeepedSecond: null,
   settings: loadSettings(),
   counters: loadCounters(),
-  prefs: loadPrefs()
+  prefs: loadPrefs(),
+  history: loadHistory(),
+  sessionCounts: { crepe: 0, pancake: 0, gaufre: 0 }, // non persistant, remis à zéro à chaque ouverture
+  calendarViewDate: new Date()
 };
 
 // ----------------------------------------------------------------
@@ -69,6 +74,7 @@ function cacheDom() {
     home: document.getElementById('panel-home'),
     minuteur: document.getElementById('panel-minuteur'),
     recipes: document.getElementById('panel-recipes'),
+    stats: document.getElementById('panel-stats'),
     settings: document.getElementById('panel-settings')
   };
 
@@ -93,8 +99,21 @@ function cacheDom() {
   el.counterResetBtn = document.getElementById('counterResetBtn');
   el.counterCard = document.querySelector('.counter-card--active');
 
+  el.sessionSummary = document.getElementById('sessionSummary');
+  el.sessionCrepeValue = document.getElementById('sessionCrepeValue');
+  el.sessionPancakeValue = document.getElementById('sessionPancakeValue');
+  el.sessionGaufreValue = document.getElementById('sessionGaufreValue');
+
   el.servingsInput = document.getElementById('servingsInput');
   el.recipeContainer = document.getElementById('recipeContainer');
+
+  el.statsTotalValue = document.getElementById('statsTotalValue');
+  el.calendarMonthLabel = document.getElementById('calendarMonthLabel');
+  el.calendarWeekdays = document.getElementById('calendarWeekdays');
+  el.calendarGrid = document.getElementById('calendarGrid');
+  el.calendarPrevBtn = document.getElementById('calendarPrevBtn');
+  el.calendarNextBtn = document.getElementById('calendarNextBtn');
+  el.achievementsGrid = document.getElementById('achievementsGrid');
 
   el.languageSelect = document.getElementById('languageSelect');
   el.soundToggle = document.getElementById('soundToggle');
@@ -148,6 +167,33 @@ function savePrefs() {
   localStorage.setItem(STORAGE_KEYS.prefs, JSON.stringify(state.prefs));
 }
 
+function loadHistory() {
+  const raw = localStorage.getItem(STORAGE_KEYS.history);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) { /* fallback */ }
+  }
+  return [];
+}
+
+function saveHistory() {
+  localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(state.history));
+}
+
+// Enregistre une préparation terminée : compteur du mode (persistant),
+// compteur de la session en cours (non persistant), et entrée d'historique
+// horodatée (pour le calendrier et les trophées).
+function recordPreparation(mode) {
+  state.counters[mode] = (state.counters[mode] || 0) + 1;
+  state.sessionCounts[mode] = (state.sessionCounts[mode] || 0) + 1;
+  state.history.push({ mode, ts: Date.now() });
+  saveCounters();
+  saveHistory();
+  renderSessionSummary();
+}
+
 // Adapter pour translations.js qui lit state.settings.language
 Object.defineProperty(state, 'settingsLangProxy', { enumerable: false });
 
@@ -198,6 +244,9 @@ function switchTab(tabName) {
   });
   if (tabName === 'recipes') {
     renderRecipesTab();
+  }
+  if (tabName === 'stats') {
+    renderStatsTab();
   }
 }
 
@@ -254,6 +303,24 @@ function renderCounter(bump) {
   }
 }
 
+// Affiche le récapitulatif de la session en cours (depuis l'ouverture de
+// l'app). Reste masqué tant qu'aucune préparation n'a été comptée.
+function renderSessionSummary() {
+  const s = state.sessionCounts;
+  const total = s.crepe + s.pancake + s.gaufre;
+
+  el.sessionCrepeValue.textContent = s.crepe;
+  el.sessionPancakeValue.textContent = s.pancake;
+  el.sessionGaufreValue.textContent = s.gaufre;
+  el.sessionSummary.classList.toggle('hidden', total === 0);
+
+  if (total > 0) {
+    el.sessionSummary.classList.remove('bump');
+    void el.sessionSummary.offsetWidth;
+    el.sessionSummary.classList.add('bump');
+  }
+}
+
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
   const s = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
@@ -290,6 +357,7 @@ function resetCycleUI() {
   state.lastBeepedSecond = null;
     clearInterval(state.timerId);
   state.timerId = null;
+  releaseWakeLock();
   el.startPauseBtn.textContent = t('btnStart');
   el.startPauseBtn.classList.remove('running');
   el.startPauseBtn.hidden = false;
@@ -306,6 +374,32 @@ function resetCycleUI() {
 function setSettingsInputsDisabled(disabled) {
   el.face1Duration.disabled = disabled;
   el.face2Duration.disabled = disabled;
+}
+
+// ----------------------------------------------------------------
+// Écran allumé pendant la cuisson (Screen Wake Lock API)
+// L'écran d'un téléphone qui s'éteint pendant que la face 1 cuit serait
+// gênant : on demande au système de garder l'écran allumé tant qu'un
+// cycle tourne. Le verrou est automatiquement relâché par le navigateur
+// quand l'onglet passe en arrière-plan ; on le redemande donc aussi au
+// retour au premier plan (voir le listener 'visibilitychange' plus bas).
+// ----------------------------------------------------------------
+let wakeLockSentinel = null;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLockSentinel = await navigator.wakeLock.request('screen');
+  } catch (e) {
+    // Refusé (onglet caché, économie d'énergie...) : pas bloquant.
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLockSentinel) {
+    wakeLockSentinel.release().catch(() => {});
+    wakeLockSentinel = null;
+  }
 }
 
 // ----------------------------------------------------------------
@@ -343,6 +437,8 @@ function startCycle() {
     updateTimerDisplay();
   }
 
+  state.stepEndTime = Date.now() + state.remainingSeconds * 1000;
+  requestWakeLock();
   runTick();
 }
 
@@ -352,27 +448,47 @@ function pauseCycle() {
   state.timerId = null;
   el.startPauseBtn.textContent = t('btnResume');
   el.startPauseBtn.classList.remove('running');
+  releaseWakeLock();
+}
+
+function resumeCycle() {
+  state.isRunning = true;
+  state.lastBeepedSecond = null;
+  el.startPauseBtn.textContent = t('btnPause');
+  el.startPauseBtn.classList.add('running');
+  state.stepEndTime = Date.now() + state.remainingSeconds * 1000;
+  requestWakeLock();
+  runTick();
+}
+
+// Le minuteur se base sur un horodatage de fin d'étape (state.stepEndTime)
+// plutôt que sur un simple décompte à chaque tick. C'est essentiel pour
+// qu'il reste fiable même si le navigateur ralentit ou suspend les
+// setInterval pendant que l'app est en arrière-plan (écran verrouillé,
+// changement d'appli...) : au retour, on recalcule le temps restant à
+// partir de l'heure réelle au lieu d'avoir dérivé au fil des ticks manqués.
+function tick() {
+  if (!state.isRunning) return;
+
+  const remaining = Math.max(0, Math.round((state.stepEndTime - Date.now()) / 1000));
+
+  if (remaining > 0 && remaining <= COUNTDOWN_THRESHOLD && state.lastBeepedSecond !== remaining) {
+    state.lastBeepedSecond = remaining;
+    playBeep();
+  }
+
+  state.remainingSeconds = remaining;
+  updateTimerDisplay();
+
+  if (remaining <= 0) {
+    handleStepEnd();
+  }
 }
 
 function runTick() {
   clearInterval(state.timerId);
-  state.timerId = setInterval(() => {
-    if (!state.isRunning) return;
-
-    // Décompte sonore 5,4,3,2,1 avant chaque fin d'étape
-    if (state.remainingSeconds > 0 && state.remainingSeconds <= COUNTDOWN_THRESHOLD
-        && state.lastBeepedSecond !== state.remainingSeconds) {
-      state.lastBeepedSecond = state.remainingSeconds;
-      playBeep();
-    }
-
-    state.remainingSeconds--;
-    updateTimerDisplay();
-
-    if (state.remainingSeconds <= 0) {
-      handleStepEnd();
-    }
-  }, 1000);
+  state.timerId = setInterval(tick, 1000);
+  tick(); // recalcule immédiatement au lieu d'attendre 1s avant le premier affichage
 }
 
 function handleStepEnd() {
@@ -398,6 +514,7 @@ function handleStepEnd() {
         if (state.currentStep === 'face2') {
           setStepIndicator(t('stepFace2'));
           setRingState();
+          state.stepEndTime = Date.now() + state.remainingSeconds * 1000;
           runTick();
         }
       }, 1500);
@@ -422,6 +539,7 @@ function finishCycle() {
   el.mainActionBtn.hidden = false;
   setSettingsInputsDisabled(false);
   vibrate([200, 100, 200, 100, 200]);
+  releaseWakeLock();
 }
 
 // ----------------------------------------------------------------
@@ -503,10 +621,7 @@ function handleStartPauseClick() {
   } else if (state.isRunning) {
     pauseCycle();
   } else {
-    state.isRunning = true;
-    el.startPauseBtn.textContent = t('btnPause');
-    el.startPauseBtn.classList.add('running');
-    runTick();
+    resumeCycle();
   }
 }
 
@@ -516,16 +631,14 @@ function handleResetFinishClick() {
   // avant de revenir à l'état prêt. Sinon (cycle en cours), ce bouton
   // annule simplement le cycle sans incrémenter le compteur.
   if (state.currentStep === 'done') {
-    state.counters[state.currentMode]++;
-    saveCounters();
+    recordPreparation(state.currentMode);
     renderCounter(true);
   }
   resetCycleUI();
 }
 
 function handleMainActionClick() {
-  state.counters[state.currentMode]++;
-  saveCounters();
+  recordPreparation(state.currentMode);
   renderCounter(true);
   resetCycleUI();
   startCycle();
@@ -546,6 +659,107 @@ function handleModeChange(newMode) {
   }
   state.currentMode = newMode;
   renderModeUI();
+}
+
+// ----------------------------------------------------------------
+// Onglet Stats : compteur total, calendrier d'historique, trophées
+// ----------------------------------------------------------------
+const ACHIEVEMENTS = [
+  { id: 'first', icon: '🥇', titleKey: 'achFirstTitle', descKey: 'achFirstDesc', check: (total, c, days) => total >= 1 },
+  { id: 'ten', icon: '🔟', titleKey: 'achTenTitle', descKey: 'achTenDesc', check: (total, c, days) => total >= 10 },
+  { id: 'fifty', icon: '🎖️', titleKey: 'achFiftyTitle', descKey: 'achFiftyDesc', check: (total, c, days) => total >= 50 },
+  { id: 'hundred', icon: '🏆', titleKey: 'achHundredTitle', descKey: 'achHundredDesc', check: (total, c, days) => total >= 100 },
+  { id: 'crepe', icon: '🫓', titleKey: 'achCrepeTitle', descKey: 'achCrepeDesc', check: (total, c) => c.crepe >= 10 },
+  { id: 'pancake', icon: '🥞', titleKey: 'achPancakeTitle', descKey: 'achPancakeDesc', check: (total, c) => c.pancake >= 10 },
+  { id: 'gaufre', icon: '🧇', titleKey: 'achGaufreTitle', descKey: 'achGaufreDesc', check: (total, c) => c.gaufre >= 10 },
+  { id: 'allrounder', icon: '🎩', titleKey: 'achAllRounderTitle', descKey: 'achAllRounderDesc', check: (total, c) => c.crepe >= 1 && c.pancake >= 1 && c.gaufre >= 1 },
+  { id: 'days3', icon: '📅', titleKey: 'achDays3Title', descKey: 'achDays3Desc', check: (total, c, days) => days >= 3 },
+  { id: 'days7', icon: '🌟', titleKey: 'achDays7Title', descKey: 'achDays7Desc', check: (total, c, days) => days >= 7 }
+];
+
+function getHistoryDayMap() {
+  const map = {};
+  state.history.forEach(entry => {
+    const d = new Date(entry.ts);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    map[key] = (map[key] || 0) + 1;
+  });
+  return map;
+}
+
+function renderStatsTotal() {
+  const total = (state.counters.crepe || 0) + (state.counters.pancake || 0) + (state.counters.gaufre || 0);
+  el.statsTotalValue.textContent = total;
+}
+
+function renderCalendar() {
+  const viewDate = state.calendarViewDate;
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const dayMap = getHistoryDayMap();
+
+  const weekdays = TRANSLATIONS[state.prefs.language]?.calendarWeekdays || TRANSLATIONS.fr.calendarWeekdays;
+  el.calendarWeekdays.innerHTML = weekdays.map(d => `<span>${d}</span>`).join('');
+
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+
+  const monthLabel = viewDate.toLocaleDateString(state.prefs.language || 'fr', { month: 'long', year: 'numeric' });
+  el.calendarMonthLabel.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+
+  const firstDay = new Date(year, month, 1);
+  const startWeekday = (firstDay.getDay() + 6) % 7; // lundi = 0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  let html = '';
+  for (let i = 0; i < startWeekday; i++) {
+    html += '<div class="cal-cell cal-empty"></div>';
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const key = `${year}-${month}-${day}`;
+    const count = dayMap[key] || 0;
+    const classes = ['cal-cell'];
+    if (count > 0) classes.push('has-activity');
+    if (key === todayKey) classes.push('is-today');
+    html += `<div class="${classes.join(' ')}"><span class="cal-day-num">${day}</span>${count > 0 ? `<span class="cal-dot">${count}</span>` : ''}</div>`;
+  }
+
+  el.calendarGrid.innerHTML = html;
+}
+
+function renderAchievements() {
+  const c = state.counters;
+  const total = (c.crepe || 0) + (c.pancake || 0) + (c.gaufre || 0);
+  const dayMap = getHistoryDayMap();
+  const distinctDays = Object.keys(dayMap).length;
+
+  el.achievementsGrid.innerHTML = ACHIEVEMENTS.map(ach => {
+    const unlocked = ach.check(total, c, distinctDays);
+    return `
+      <div class="ach-card ${unlocked ? 'unlocked' : 'locked'}">
+        <span class="ach-icon">${ach.icon}</span>
+        <span class="ach-title">${t(ach.titleKey)}</span>
+        <span class="ach-desc">${t(ach.descKey)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderStatsTab() {
+  renderStatsTotal();
+  renderCalendar();
+  renderAchievements();
+}
+
+function initStatsTab() {
+  el.calendarPrevBtn.addEventListener('click', () => {
+    state.calendarViewDate = new Date(state.calendarViewDate.getFullYear(), state.calendarViewDate.getMonth() - 1, 1);
+    renderCalendar();
+  });
+  el.calendarNextBtn.addEventListener('click', () => {
+    state.calendarViewDate = new Date(state.calendarViewDate.getFullYear(), state.calendarViewDate.getMonth() + 1, 1);
+    renderCalendar();
+  });
 }
 
 // ----------------------------------------------------------------
@@ -576,7 +790,9 @@ function initSettingsTab() {
     savePrefs();
     translateStaticUI();
     renderModeUI();
+    renderSessionSummary();
     if (!el.panels.recipes.classList.contains('hidden')) renderRecipesTab();
+    if (!el.panels.stats.classList.contains('hidden')) renderStatsTab();
   });
 
   el.soundToggle.addEventListener('change', () => {
@@ -638,12 +854,32 @@ function init() {
   applyDarkMode();
   translateStaticUI();
   renderModeUI();
+  renderSessionSummary();
   switchTab('home');
   initHomeChooser();
   initTabs();
   initTimerEvents();
   initRecipesTab();
   initSettingsTab();
+  initStatsTab();
+
+  // Au retour au premier plan (l'utilisateur quitte l'app puis y revient),
+  // on resynchronise immédiatement le minuteur (il se base sur une heure de
+  // fin absolue, donc il "rattrape" correctement même si les setInterval ont
+  // été suspendus pendant que l'app était en arrière-plan), on redemande le
+  // verrou d'écran (le navigateur le relâche automatiquement en arrière-plan)
+  // et on réactive le son si besoin (iOS suspend l'AudioContext en arrière-plan).
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      if (state.isRunning) {
+        requestWakeLock();
+        tick();
+      }
+    }
+  });
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
