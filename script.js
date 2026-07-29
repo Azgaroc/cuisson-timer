@@ -121,6 +121,11 @@ function cacheDom() {
   el.sessionPancakeValue = document.getElementById('sessionPancakeValue');
   el.sessionGaufreValue = document.getElementById('sessionGaufreValue');
 
+  el.celebrationOverlay = document.getElementById('celebrationOverlay');
+  el.celebrationEmoji = document.getElementById('celebrationEmoji');
+  el.celebrationText = document.getElementById('celebrationText');
+  el.celebrationCloseBtn = document.getElementById('celebrationCloseBtn');
+
   el.servingsInput = document.getElementById('servingsInput');
   el.recipeContainer = document.getElementById('recipeContainer');
 
@@ -333,6 +338,25 @@ function renderSessionSummary() {
     void el.sessionSummary.offsetWidth;
     el.sessionSummary.classList.add('bump');
   }
+}
+
+// Affiche une fenêtre de félicitations avec le nombre réalisé pendant la
+// session en cours pour ce mode (ex: "Bravo ! Vous avez réalisé 3 crêpes").
+function showCelebration(mode, sessionCount) {
+  const singularKey = { crepe: 'modeCrepe', pancake: 'modePancake', gaufre: 'modeGaufre' }[mode];
+  const pluralKey = { crepe: 'modeCrepePlural', pancake: 'modePancakePlural', gaufre: 'modeGaufrePlural' }[mode];
+  const label = t(sessionCount === 1 ? singularKey : pluralKey);
+
+  el.celebrationEmoji.innerHTML = MODES[mode].emoji;
+  el.celebrationText.textContent = t('celebrationText')
+    .replace('{count}', sessionCount)
+    .replace('{item}', label);
+
+  el.celebrationOverlay.classList.remove('hidden');
+}
+
+function closeCelebration() {
+  el.celebrationOverlay.classList.add('hidden');
 }
 
 function formatTime(totalSeconds) {
@@ -645,8 +669,10 @@ function handleResetFinishClick() {
   // avant de revenir à l'état prêt. Sinon (cycle en cours), ce bouton
   // annule simplement le cycle sans incrémenter le compteur.
   if (state.currentStep === 'done') {
-    recordPreparation(state.currentMode);
+    const mode = state.currentMode;
+    recordPreparation(mode);
     renderCounter(true);
+    showCelebration(mode, state.sessionCounts[mode]);
   }
   resetCycleUI();
 }
@@ -974,6 +1000,10 @@ function initTimerEvents() {
   el.resetFinishBtn.addEventListener('click', handleResetFinishClick);
   el.mainActionBtn.addEventListener('click', handleMainActionClick);
   el.counterResetBtn.addEventListener('click', handleResetCounterClick);
+  el.celebrationCloseBtn.addEventListener('click', closeCelebration);
+  el.celebrationOverlay.addEventListener('click', (event) => {
+    if (event.target === el.celebrationOverlay) closeCelebration();
+  });
 
   el.face1Duration.addEventListener('change', () => {
     if (state.currentStep === 'idle') {
@@ -1026,6 +1056,18 @@ function init() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    });
+
+    // Dès qu'une nouvelle version du Service Worker prend le contrôle de la
+    // page (mise à jour détectée), on recharge une seule fois automatiquement.
+    // Ça évite de rester bloqué avec un mélange de fichiers périmés (ex:
+    // un bouton qui affiche encore une ancienne clé de traduction) en
+    // attendant que l'utilisateur ferme/rouvre l'app manuellement.
+    let refreshingAfterUpdate = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshingAfterUpdate) return;
+      refreshingAfterUpdate = true;
+      window.location.reload();
     });
   }
 }

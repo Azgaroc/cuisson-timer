@@ -9,7 +9,7 @@
 // (et on met à jour le cache au passage) ; sinon, on retombe sur le cache
 // (mode hors-ligne).
 
-const CACHE_NAME = 'pancake-timer-v11';
+const CACHE_NAME = 'pancake-timer-v12';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

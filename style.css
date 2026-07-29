@@ -1131,6 +1131,64 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   .achievements-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
+/* ===== Fenêtre de félicitations ===== */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 19, 14, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 24px;
+}
+
+.celebration-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 32px 24px;
+  max-width: 340px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  box-shadow: var(--shadow);
+  animation: celebrationPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes celebrationPop {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.celebration-badge {
+  font-size: 3.2rem;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.celebration-badge .icon-crepe {
+  width: 1em;
+  height: 1em;
+}
+
+.celebration-card h2 {
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.celebration-card p {
+  color: var(--cocoa-soft);
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.celebration-card .btn-large {
+  max-width: 220px;
+}
+
 /* ===== Accessibilité : focus visible ===== */
 button:focus-visible, input:focus-visible, select:focus-visible {
   outline: 2px solid var(--honey);

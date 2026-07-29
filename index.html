@@ -116,7 +116,7 @@
       <div class="session-summary hidden" id="sessionSummary">
         <span class="session-title" data-i18n="sessionSummaryTitle">Cette session</span>
         <div class="session-items">
-          <span class="session-item">🫓 <span id="sessionCrepeValue">0</span></span>
+          <span class="session-item"><svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M4 13 A8 8 0 0 1 20 13 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1"/><path d="M6 13 Q12 11 18 13" fill="none" stroke="#C9954F" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/><circle cx="10" cy="9.3" r="0.85" fill="#A8551C" opacity="0.75"/><circle cx="14.7" cy="9.8" r="0.7" fill="#A8551C" opacity="0.75"/><circle cx="12.2" cy="7.3" r="0.55" fill="#A8551C" opacity="0.7"/></svg> <span id="sessionCrepeValue">0</span></span>
           <span class="session-item">🥞 <span id="sessionPancakeValue">0</span></span>
           <span class="session-item">🧇 <span id="sessionGaufreValue">0</span></span>
         </div>
@@ -243,6 +243,16 @@
     </div>
   </section>
 
+</div>
+
+<!-- ===== Fenêtre de félicitations (après validation d'une cuisson) ===== -->
+<div class="celebration-overlay hidden" id="celebrationOverlay">
+  <div class="celebration-card">
+    <span class="celebration-badge" id="celebrationEmoji"></span>
+    <h2 data-i18n="celebrationTitle">Bravo !</h2>
+    <p id="celebrationText"></p>
+    <button class="btn-large btn-primary" id="celebrationCloseBtn" data-i18n="celebrationContinue">Continuer</button>
+  </div>
 </div>
 
 <!-- ===== Barre d'onglets fixée en bas ===== -->
