@@ -52,13 +52,29 @@ let state = {
   stepEndTime: null, // horodatage (ms) de fin d'étape prévue, pour rester fiable en arrière-plan
   lastBeepedSecond: null,
   settings: loadSettings(),
-  counters: loadCounters(),
+  counters: { crepe: 0, pancake: 0, gaufre: 0 }, // calculé depuis l'historique juste après (voir plus bas)
   prefs: loadPrefs(),
   history: loadHistory(),
   sessionCounts: { crepe: 0, pancake: 0, gaufre: 0 }, // non persistant, remis à zéro à chaque ouverture
   calendarViewDate: new Date(),
   dayDetailDate: null
 };
+
+// Les compteurs (par mode et total) ne sont jamais stockés indépendamment :
+// ils sont toujours recalculés à partir de state.history, qui est la seule
+// source de vérité. Ça élimine par construction tout risque de désynchronisation
+// entre "compteur total" et "historique/calendrier" (ex: supprimer un jour dans
+// le calendrier sans que le compteur global ne se mette à jour).
+function computeCounters() {
+  const counters = { crepe: 0, pancake: 0, gaufre: 0 };
+  state.history.forEach(entry => {
+    if (counters[entry.mode] === undefined) counters[entry.mode] = 0;
+    counters[entry.mode]++;
+  });
+  return counters;
+}
+
+state.counters = computeCounters();
 
 // ----------------------------------------------------------------
 // Références DOM
@@ -147,17 +163,9 @@ function saveSettings() {
   localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(state.settings));
 }
 
-function loadCounters() {
-  const raw = localStorage.getItem(STORAGE_KEYS.counters);
-  if (raw) {
-    try { return JSON.parse(raw); } catch (e) { /* fallback */ }
-  }
-  return { crepe: 0, pancake: 0, gaufre: 0 };
-}
-
-function saveCounters() {
-  localStorage.setItem(STORAGE_KEYS.counters, JSON.stringify(state.counters));
-}
+// NOTE : plus de loadCounters()/saveCounters() — les compteurs sont dérivés
+// de state.history via computeCounters() (voir plus haut), jamais persistés
+// indépendamment.
 
 function loadPrefs() {
   const raw = localStorage.getItem(STORAGE_KEYS.prefs);
@@ -193,11 +201,10 @@ function saveHistory() {
 // compteur de la session en cours (non persistant), et entrée d'historique
 // horodatée (pour le calendrier et les trophées).
 function recordPreparation(mode) {
-  state.counters[mode] = (state.counters[mode] || 0) + 1;
   state.sessionCounts[mode] = (state.sessionCounts[mode] || 0) + 1;
   state.history.push({ mode, ts: Date.now() });
-  saveCounters();
   saveHistory();
+  state.counters = computeCounters();
   renderSessionSummary();
 }
 
@@ -654,8 +661,9 @@ function handleMainActionClick() {
 function handleResetCounterClick() {
   const confirmed = confirm(t('confirmResetCounter'));
   if (!confirmed) return;
-  state.counters[state.currentMode] = 0;
-  saveCounters();
+  state.history = state.history.filter(entry => entry.mode !== state.currentMode);
+  saveHistory();
+  state.counters = computeCounters();
   renderCounter();
 }
 
@@ -711,21 +719,24 @@ function removeOneEntry(mode, year, month, day) {
   if (entries.length === 0) return;
   const target = entries[entries.length - 1];
   state.history.splice(target.idx, 1);
-  state.counters[mode] = Math.max(0, (state.counters[mode] || 0) - 1);
   saveHistory();
-  saveCounters();
+  state.counters = computeCounters();
+}
+
+function addOneEntry(mode, year, month, day) {
+  // Horodaté à midi ce jour-là (peu importe l'heure réelle du clic), pour que
+  // l'entrée reste bien rattachée à la bonne case du calendrier.
+  const ts = new Date(year, month, day, 12, 0, 0).getTime();
+  state.history.push({ mode, ts });
+  saveHistory();
+  state.counters = computeCounters();
 }
 
 function removeAllEntriesForDay(year, month, day) {
   const entries = getEntriesForDay(year, month, day);
-  const byMode = {};
-  entries.forEach(e => { byMode[e.mode] = (byMode[e.mode] || 0) + 1; });
-  Object.keys(byMode).forEach(mode => {
-    state.counters[mode] = Math.max(0, (state.counters[mode] || 0) - byMode[mode]);
-  });
   entries.sort((a, b) => b.idx - a.idx).forEach(e => state.history.splice(e.idx, 1));
   saveHistory();
-  saveCounters();
+  state.counters = computeCounters();
 }
 
 function openDayDetail(year, month, day) {
@@ -755,20 +766,17 @@ function renderDayDetail() {
   const labelKeys = { crepe: 'modeCrepe', pancake: 'modePancake', gaufre: 'modeGaufre' };
   const icons = { crepe: MODES.crepe.emoji, pancake: MODES.pancake.emoji, gaufre: MODES.gaufre.emoji };
 
-  el.dayDetailItems.innerHTML = Object.keys(byMode)
-    .filter(mode => byMode[mode] > 0)
-    .map(mode => `
+  // On affiche toujours les 3 recettes (même à 0), pour pouvoir aussi bien
+  // corriger un oubli (bouton +) que retirer un doublon (bouton −).
+  el.dayDetailItems.innerHTML = Object.keys(byMode).map(mode => `
       <div class="day-detail-item">
         <span class="day-detail-icon">${icons[mode]}</span>
         <span class="day-detail-label">${t(labelKeys[mode])}</span>
         <span class="day-detail-count">${byMode[mode]}</span>
-        <button class="day-detail-minus" data-mode="${mode}" aria-label="-1">−</button>
+        <button class="day-detail-minus" data-mode="${mode}" aria-label="-1" ${byMode[mode] === 0 ? 'disabled' : ''}>−</button>
+        <button class="day-detail-plus" data-mode="${mode}" aria-label="+1">+</button>
       </div>
     `).join('');
-
-  if (entries.length === 0) {
-    closeDayDetail();
-  }
 }
 
 function initCalendarInteractions() {
@@ -781,15 +789,26 @@ function initCalendarInteractions() {
   el.dayDetailClose.addEventListener('click', closeDayDetail);
 
   el.dayDetailItems.addEventListener('click', (event) => {
-    const btn = event.target.closest('.day-detail-minus');
-    if (!btn || !state.dayDetailDate) return;
+    if (!state.dayDetailDate) return;
     const { year, month, day } = state.dayDetailDate;
-    removeOneEntry(btn.dataset.mode, year, month, day);
+
+    const minusBtn = event.target.closest('.day-detail-minus');
+    if (minusBtn) {
+      removeOneEntry(minusBtn.dataset.mode, year, month, day);
+    }
+
+    const plusBtn = event.target.closest('.day-detail-plus');
+    if (plusBtn) {
+      addOneEntry(plusBtn.dataset.mode, year, month, day);
+    }
+
+    if (!minusBtn && !plusBtn) return;
+
     renderDayDetail();
     renderCalendar();
     renderAchievements();
     renderStatsTotal();
-    if (state.currentMode) renderCounter();
+    renderCounter();
   });
 
   el.dayDetailDeleteAll.addEventListener('click', () => {
@@ -845,13 +864,6 @@ function renderCalendar() {
   }
 
   el.calendarGrid.innerHTML = html;
-
-  // Si le panneau de détail est ouvert sur un jour qui vient d'être modifié
-  // (ex: après une suppression), on le referme pour éviter un état incohérent.
-  if (el.dayDetail && !el.dayDetail.classList.contains('hidden')) {
-    const key = `${state.dayDetailDate?.year}-${state.dayDetailDate?.month}-${state.dayDetailDate?.day}`;
-    if (!dayMap[key]) closeDayDetail();
-  }
 }
 
 function renderAchievements() {
