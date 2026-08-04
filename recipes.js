@@ -3,7 +3,7 @@
 // Quantités de base pour 4 personnes, recalculées dynamiquement.
 // ===================================================================
 
-const CREPE_ICON_SVG = '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M4 13 A8 8 0 0 1 20 13 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1"/><path d="M6 13 Q12 11 18 13" fill="none" stroke="#C9954F" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/><circle cx="10" cy="9.3" r="0.85" fill="#A8551C" opacity="0.75"/><circle cx="14.7" cy="9.8" r="0.7" fill="#A8551C" opacity="0.75"/><circle cx="12.2" cy="7.3" r="0.55" fill="#A8551C" opacity="0.7"/></svg>';
+const CREPE_ICON_SVG = '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M12 21 L3.2 7.4 Q12 2.2 20.8 7.4 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1.1" stroke-linejoin="round"/><path d="M12 21 L7.3 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L12 3" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L16.7 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><circle cx="9.3" cy="11" r="0.8" fill="#A8551C" opacity="0.75"/><circle cx="14.9" cy="11.4" r="0.65" fill="#A8551C" opacity="0.75"/><circle cx="12" cy="8.6" r="0.55" fill="#A8551C" opacity="0.7"/></svg>';
 
 const RECIPES = {
   crepe: {
@@ -100,12 +100,12 @@ function renderRecipe(modeKey, servings) {
         <span class="recipe-emoji">${recipe.emoji}</span>
         <div>
           <h3>${title}</h3>
+          <span class="recipe-difficulty recipe-difficulty--${modeKey}">${difficulty}</span>
           <div class="recipe-badges">
             <span class="badge">⏱️ ${t('badgePrep')} ${recipe.prepMinutes} ${t('unitMin')}</span>
             <span class="badge">🔥 ${t('badgeCook')} ${recipe.cookMinutes} ${t('unitMin')}</span>
             <span class="badge">👥 ${servings} ${t('badgeServings')}</span>
             <span class="badge badge-yield">${recipe.emoji} ≈ ${estimatedYield} ${t(yieldLabelKey)}</span>
-            <span class="badge badge-difficulty">${difficulty}</span>
           </div>
         </div>
       </div>
@@ -120,6 +120,8 @@ function renderRecipe(modeKey, servings) {
           <ol class="step-list">${stepRows}</ol>
         </div>
       </div>
+
+      <button class="btn-launch-recipe" data-mode="${modeKey}">${t('recipeLaunchBtn')} →</button>
     </article>
   `;
 }

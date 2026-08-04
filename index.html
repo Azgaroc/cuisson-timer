@@ -30,7 +30,7 @@
 
     <div class="mode-chooser">
       <button class="chooser-mode-btn chooser-mode-btn--crepe" data-mode="crepe">
-        <span class="chooser-badge"><svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M4 13 A8 8 0 0 1 20 13 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1"/><path d="M6 13 Q12 11 18 13" fill="none" stroke="#C9954F" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/><circle cx="10" cy="9.3" r="0.85" fill="#A8551C" opacity="0.75"/><circle cx="14.7" cy="9.8" r="0.7" fill="#A8551C" opacity="0.75"/><circle cx="12.2" cy="7.3" r="0.55" fill="#A8551C" opacity="0.7"/></svg></span>
+        <span class="chooser-badge"><svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M12 21 L3.2 7.4 Q12 2.2 20.8 7.4 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1.1" stroke-linejoin="round"/><path d="M12 21 L7.3 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L12 3" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L16.7 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><circle cx="9.3" cy="11" r="0.8" fill="#A8551C" opacity="0.75"/><circle cx="14.9" cy="11.4" r="0.65" fill="#A8551C" opacity="0.75"/><circle cx="12" cy="8.6" r="0.55" fill="#A8551C" opacity="0.7"/></svg></span>
         <span class="chooser-copy">
           <span class="chooser-name" data-i18n="modeCrepe">Crêpe</span>
           <span class="chooser-desc" data-i18n="modeCrepeDesc">Fine et dorée, à la française</span>
@@ -55,6 +55,27 @@
       </button>
     </div>
 
+    <section class="home-highlights" id="homeHighlights">
+      <div class="home-resume-banner hidden" id="homeResumeBanner">
+        <div class="home-resume-text">
+          <span class="home-resume-label" data-i18n="homeResumeLabel">Cuisson en cours</span>
+          <span class="home-resume-value" id="homeResumeValue"></span>
+        </div>
+        <button class="home-resume-btn" id="homeResumeBtn" data-i18n="homeResumeBtn">Reprendre →</button>
+      </div>
+
+      <div class="home-highlight-grid">
+        <div class="home-highlight-card">
+          <span class="home-highlight-title" data-i18n="homeTodayTitle">Aujourd'hui</span>
+          <div class="home-highlight-body" id="homeTodayBody"></div>
+        </div>
+        <div class="home-highlight-card">
+          <span class="home-highlight-title" data-i18n="homeLastTitle">Dernière cuisson</span>
+          <div class="home-highlight-body" id="homeLastBody"></div>
+        </div>
+      </div>
+    </section>
+
     <p class="home-footer" data-i18n="footerTagline">Pensée pour tous les gourmands</p>
   </section>
 
@@ -62,7 +83,7 @@
   <section class="tab-panel hidden" id="panel-minuteur">
 
     <nav class="mode-selector">
-      <button class="mode-btn" data-mode="crepe"><svg viewBox="0 0 24 24" class="icon-crepe icon-crepe--inline" xmlns="http://www.w3.org/2000/svg"><path d="M4 13 A8 8 0 0 1 20 13 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1"/><path d="M6 13 Q12 11 18 13" fill="none" stroke="#C9954F" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/><circle cx="10" cy="9.3" r="0.85" fill="#A8551C" opacity="0.75"/><circle cx="14.7" cy="9.8" r="0.7" fill="#A8551C" opacity="0.75"/><circle cx="12.2" cy="7.3" r="0.55" fill="#A8551C" opacity="0.7"/></svg> <span data-i18n="modeCrepe">Crêpe</span></button>
+      <button class="mode-btn" data-mode="crepe"><svg viewBox="0 0 24 24" class="icon-crepe icon-crepe--inline" xmlns="http://www.w3.org/2000/svg"><path d="M12 21 L3.2 7.4 Q12 2.2 20.8 7.4 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1.1" stroke-linejoin="round"/><path d="M12 21 L7.3 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L12 3" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L16.7 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><circle cx="9.3" cy="11" r="0.8" fill="#A8551C" opacity="0.75"/><circle cx="14.9" cy="11.4" r="0.65" fill="#A8551C" opacity="0.75"/><circle cx="12" cy="8.6" r="0.55" fill="#A8551C" opacity="0.7"/></svg> <span data-i18n="modeCrepe">Crêpe</span></button>
       <button class="mode-btn" data-mode="pancake">🥞 <span data-i18n="modePancake">Pancake</span></button>
       <button class="mode-btn" data-mode="gaufre">🧇 <span data-i18n="modeGaufre">Gaufre</span></button>
     </nav>
@@ -108,7 +129,7 @@
       <div class="counters-grid counters-grid--single">
         <div class="counter-card counter-card--active">
           <button class="counter-reset" id="counterResetBtn" aria-label="Reset">↺</button>
-          <span class="counter-emoji" id="activeCounterEmoji"><svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M4 13 A8 8 0 0 1 20 13 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1"/><path d="M6 13 Q12 11 18 13" fill="none" stroke="#C9954F" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/><circle cx="10" cy="9.3" r="0.85" fill="#A8551C" opacity="0.75"/><circle cx="14.7" cy="9.8" r="0.7" fill="#A8551C" opacity="0.75"/><circle cx="12.2" cy="7.3" r="0.55" fill="#A8551C" opacity="0.7"/></svg></span>
+          <span class="counter-emoji" id="activeCounterEmoji"><svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M12 21 L3.2 7.4 Q12 2.2 20.8 7.4 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1.1" stroke-linejoin="round"/><path d="M12 21 L7.3 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L12 3" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L16.7 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><circle cx="9.3" cy="11" r="0.8" fill="#A8551C" opacity="0.75"/><circle cx="14.9" cy="11.4" r="0.65" fill="#A8551C" opacity="0.75"/><circle cx="12" cy="8.6" r="0.55" fill="#A8551C" opacity="0.7"/></svg></span>
           <span class="counter-value" id="activeCounterValue">0</span>
           <span class="counter-label" id="activeCounterLabel">Crêpes</span>
         </div>
@@ -117,7 +138,7 @@
       <div class="session-summary hidden" id="sessionSummary">
         <span class="session-title" data-i18n="sessionSummaryTitle">Cette session</span>
         <div class="session-items">
-          <span class="session-item"><svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M4 13 A8 8 0 0 1 20 13 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1"/><path d="M6 13 Q12 11 18 13" fill="none" stroke="#C9954F" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/><circle cx="10" cy="9.3" r="0.85" fill="#A8551C" opacity="0.75"/><circle cx="14.7" cy="9.8" r="0.7" fill="#A8551C" opacity="0.75"/><circle cx="12.2" cy="7.3" r="0.55" fill="#A8551C" opacity="0.7"/></svg> <span id="sessionCrepeValue">0</span></span>
+          <span class="session-item"><svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M12 21 L3.2 7.4 Q12 2.2 20.8 7.4 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1.1" stroke-linejoin="round"/><path d="M12 21 L7.3 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L12 3" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L16.7 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><circle cx="9.3" cy="11" r="0.8" fill="#A8551C" opacity="0.75"/><circle cx="14.9" cy="11.4" r="0.65" fill="#A8551C" opacity="0.75"/><circle cx="12" cy="8.6" r="0.55" fill="#A8551C" opacity="0.7"/></svg> <span id="sessionCrepeValue">0</span></span>
           <span class="session-item">🥞 <span id="sessionPancakeValue">0</span></span>
           <span class="session-item">🧇 <span id="sessionGaufreValue">0</span></span>
         </div>
@@ -194,6 +215,7 @@
           <option value="en">English</option>
           <option value="es">Español</option>
           <option value="de">Deutsch</option>
+          <option value="it">Italiano</option>
           <option value="pt">Português</option>
         </select>
       </div>
@@ -212,10 +234,13 @@
           <label data-i18n="settingsSound">Son</label>
           <p class="hint-text" data-i18n="settingsSoundHint">Bips de décompte et alerte de fin de cuisson</p>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="soundToggle" checked>
-          <span class="slider"></span>
-        </label>
+        <div class="sound-setting-controls">
+          <button class="btn-test-sound" id="testSoundBtn" data-i18n-aria="settingsTestSound" aria-label="Tester le son">🔊</button>
+          <label class="switch">
+            <input type="checkbox" id="soundToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
       <div class="setting-block toggle-row">
         <div>

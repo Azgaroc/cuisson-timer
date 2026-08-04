@@ -15,7 +15,7 @@ const MODES = {
     // Même icône que celle définie dans recipes.js (CREPE_ICON_SVG) : on ne
     // redéclare pas la constante ici pour éviter un conflit de nom entre
     // fichiers chargés dans la même portée globale.
-    emoji: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M4 13 A8 8 0 0 1 20 13 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1"/><path d="M6 13 Q12 11 18 13" fill="none" stroke="#C9954F" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/><circle cx="10" cy="9.3" r="0.85" fill="#A8551C" opacity="0.75"/><circle cx="14.7" cy="9.8" r="0.7" fill="#A8551C" opacity="0.75"/><circle cx="12.2" cy="7.3" r="0.55" fill="#A8551C" opacity="0.7"/></svg>'
+    emoji: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M12 21 L3.2 7.4 Q12 2.2 20.8 7.4 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1.1" stroke-linejoin="round"/><path d="M12 21 L7.3 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L12 3" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L16.7 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><circle cx="9.3" cy="11" r="0.8" fill="#A8551C" opacity="0.75"/><circle cx="14.9" cy="11.4" r="0.65" fill="#A8551C" opacity="0.75"/><circle cx="12" cy="8.6" r="0.55" fill="#A8551C" opacity="0.7"/></svg>'
   },
   pancake: {
     hasTwoFaces: true,
@@ -84,6 +84,11 @@ function cacheDom() {
   el.mainApp = document.getElementById('mainApp');
 
   el.chooserModeButtons = document.querySelectorAll('#panel-home .chooser-mode-btn');
+  el.homeResumeBanner = document.getElementById('homeResumeBanner');
+  el.homeResumeValue = document.getElementById('homeResumeValue');
+  el.homeResumeBtn = document.getElementById('homeResumeBtn');
+  el.homeTodayBody = document.getElementById('homeTodayBody');
+  el.homeLastBody = document.getElementById('homeLastBody');
 
   el.tabButtons = document.querySelectorAll('.bottom-tabs .tab-btn');
   el.panels = {
@@ -144,6 +149,7 @@ function cacheDom() {
 
   el.languageSelect = document.getElementById('languageSelect');
   el.soundToggle = document.getElementById('soundToggle');
+  el.testSoundBtn = document.getElementById('testSoundBtn');
   el.vibrationToggle = document.getElementById('vibrationToggle');
   el.darkModeToggle = document.getElementById('darkModeToggle');
 }
@@ -220,6 +226,10 @@ function translateStaticUI() {
     const key = node.getAttribute('data-i18n');
     node.textContent = t(key);
   });
+  document.querySelectorAll('[data-i18n-aria]').forEach(node => {
+    const key = node.getAttribute('data-i18n-aria');
+    node.setAttribute('aria-label', t(key));
+  });
   // Le nom de l'app ("Pancake Timer") est volontairement fixe et non
   // traduit, pour rester facilement reconnaissable/recherchable quelle
   // que soit la langue de l'interface.
@@ -244,6 +254,64 @@ function initHomeChooser() {
       switchTab('minuteur');
     });
   });
+
+  el.homeResumeBtn.addEventListener('click', () => switchTab('minuteur'));
+}
+
+// Formatte un horodatage en "il y a ..." dans la langue courante, via l'API
+// native Intl.RelativeTimeFormat (gère automatiquement "hier", "à l'instant",
+// le pluriel, etc. pour chacune des 5 langues sans dictionnaire à maintenir).
+function formatRelativeTime(ts) {
+  const diffMs = Date.now() - ts;
+  const diffMinutes = Math.round(diffMs / 60000);
+  const rtf = new Intl.RelativeTimeFormat(state.prefs.language || 'fr', { numeric: 'auto' });
+
+  if (diffMinutes < 1) return rtf.format(0, 'minute');
+  if (diffMinutes < 60) return rtf.format(-diffMinutes, 'minute');
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return rtf.format(-diffHours, 'hour');
+  const diffDays = Math.round(diffHours / 24);
+  return rtf.format(-diffDays, 'day');
+}
+
+// Résume l'écran d'accueil : reprise d'une cuisson en cours (si l'utilisateur
+// a navigué hors du Minuteur pendant un cycle), compteurs du jour et dernière
+// préparation enregistrée. Rend l'accueil utile même sans action à faire.
+function renderHomeHighlights() {
+  // --- Bandeau de reprise ---
+  const midCycle = state.currentStep === 'face1' || state.currentStep === 'face2';
+  el.homeResumeBanner.classList.toggle('hidden', !midCycle);
+  if (midCycle) {
+    const stepKey = state.currentStep === 'face1' ? 'stepFace1' : 'stepFace2';
+    const modeLabel = t({ crepe: 'modeCrepe', pancake: 'modePancake', gaufre: 'modeGaufre' }[state.currentMode]);
+    el.homeResumeValue.textContent = `${modeLabel} · ${t(stepKey)}${state.isRunning ? '' : ' · ' + t('btnResume')}`;
+  }
+
+  // --- Compteurs du jour ---
+  const today = new Date();
+  const todayCounts = { crepe: 0, pancake: 0, gaufre: 0 };
+  state.history.forEach(entry => {
+    const d = new Date(entry.ts);
+    if (d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate()) {
+      todayCounts[entry.mode] = (todayCounts[entry.mode] || 0) + 1;
+    }
+  });
+  const todayItems = ['crepe', 'pancake', 'gaufre']
+    .filter(mode => todayCounts[mode] > 0)
+    .map(mode => `<span class="home-highlight-item">${MODES[mode].emoji} × ${todayCounts[mode]}</span>`)
+    .join('');
+  el.homeTodayBody.innerHTML = todayItems || `<span class="home-highlight-empty">${t('homeTodayEmpty')}</span>`;
+
+  // --- Dernière cuisson ---
+  if (state.history.length === 0) {
+    el.homeLastBody.innerHTML = `<span class="home-highlight-empty">${t('homeLastEmpty')}</span>`;
+  } else {
+    const last = state.history.reduce((a, b) => (b.ts > a.ts ? b : a));
+    el.homeLastBody.innerHTML = `
+      <span class="home-highlight-item">${MODES[last.mode].emoji}</span>
+      <span class="home-last-time">${formatRelativeTime(last.ts)}</span>
+    `;
+  }
 }
 
 // ----------------------------------------------------------------
@@ -257,6 +325,9 @@ function switchTab(tabName) {
   Object.keys(el.panels).forEach(key => {
     el.panels[key].classList.toggle('hidden', key !== tabName);
   });
+  if (tabName === 'home') {
+    renderHomeHighlights();
+  }
   if (tabName === 'recipes') {
     renderRecipesTab();
   }
@@ -467,7 +538,7 @@ function startCycle() {
     state.remainingSeconds = getDuration('face1');
     state.currentStepTotal = state.remainingSeconds;
     setStepIndicator(t('stepFace1'));
-    setRingState();
+    setRingState('state-face1');
     updateTimerDisplay();
   }
 
@@ -546,8 +617,8 @@ function handleStepEnd() {
       // Petite pause visuelle de 1.5s puis démarrage automatique de la face 2
       setTimeout(() => {
         if (state.currentStep === 'face2') {
-          setStepIndicator(t('stepFace2'));
-          setRingState();
+          setStepIndicator(t('stepFace2'), 'face2');
+          setRingState('state-face2');
           state.stepEndTime = Date.now() + state.remainingSeconds * 1000;
           runTick();
         }
@@ -706,7 +777,7 @@ const ACHIEVEMENTS = [
   { id: 'ten', icon: '🔟', titleKey: 'achTenTitle', descKey: 'achTenDesc', check: (total, c, days) => total >= 10 },
   { id: 'fifty', icon: '🎖️', titleKey: 'achFiftyTitle', descKey: 'achFiftyDesc', check: (total, c, days) => total >= 50 },
   { id: 'hundred', icon: '🏆', titleKey: 'achHundredTitle', descKey: 'achHundredDesc', check: (total, c, days) => total >= 100 },
-  { id: 'crepe', icon: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M4 13 A8 8 0 0 1 20 13 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1"/><path d="M6 13 Q12 11 18 13" fill="none" stroke="#C9954F" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/><circle cx="10" cy="9.3" r="0.85" fill="#A8551C" opacity="0.75"/><circle cx="14.7" cy="9.8" r="0.7" fill="#A8551C" opacity="0.75"/><circle cx="12.2" cy="7.3" r="0.55" fill="#A8551C" opacity="0.7"/></svg>', titleKey: 'achCrepeTitle', descKey: 'achCrepeDesc', check: (total, c) => c.crepe >= 10 },
+  { id: 'crepe', icon: '<svg viewBox="0 0 24 24" class="icon-crepe" xmlns="http://www.w3.org/2000/svg"><path d="M12 21 L3.2 7.4 Q12 2.2 20.8 7.4 Z" fill="#F6D9A0" stroke="#B97A3D" stroke-width="1.1" stroke-linejoin="round"/><path d="M12 21 L7.3 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L12 3" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><path d="M12 21 L16.7 6.6" fill="none" stroke="#C9954F" stroke-width="0.7" opacity="0.65" stroke-linecap="round"/><circle cx="9.3" cy="11" r="0.8" fill="#A8551C" opacity="0.75"/><circle cx="14.9" cy="11.4" r="0.65" fill="#A8551C" opacity="0.75"/><circle cx="12" cy="8.6" r="0.55" fill="#A8551C" opacity="0.7"/></svg>', titleKey: 'achCrepeTitle', descKey: 'achCrepeDesc', check: (total, c) => c.crepe >= 10 },
   { id: 'pancake', icon: '🥞', titleKey: 'achPancakeTitle', descKey: 'achPancakeDesc', check: (total, c) => c.pancake >= 10 },
   { id: 'gaufre', icon: '🧇', titleKey: 'achGaufreTitle', descKey: 'achGaufreDesc', check: (total, c) => c.gaufre >= 10 },
   { id: 'allrounder', icon: '🎩', titleKey: 'achAllRounderTitle', descKey: 'achAllRounderDesc', check: (total, c) => c.crepe >= 1 && c.pancake >= 1 && c.gaufre >= 1 },
@@ -938,6 +1009,20 @@ function renderRecipesTab() {
 
 function initRecipesTab() {
   el.servingsInput.addEventListener('input', renderRecipesTab);
+
+  el.recipeContainer.addEventListener('click', (event) => {
+    const launchBtn = event.target.closest('.btn-launch-recipe');
+    if (!launchBtn) return;
+    const mode = launchBtn.dataset.mode;
+    if (!MODES[mode]) return;
+    if (state.isRunning) {
+      const confirmed = confirm(t('confirmCancelCycle'));
+      if (!confirmed) return;
+    }
+    state.currentMode = mode;
+    renderModeUI();
+    switchTab('minuteur');
+  });
 }
 
 // ----------------------------------------------------------------
@@ -951,10 +1036,12 @@ function initSettingsTab() {
 
   el.languageSelect.addEventListener('change', () => {
     state.prefs.language = el.languageSelect.value;
+    document.documentElement.lang = state.prefs.language;
     savePrefs();
     translateStaticUI();
     renderModeUI();
     renderSessionSummary();
+    if (state.activeTab === 'home') renderHomeHighlights();
     if (!el.panels.recipes.classList.contains('hidden')) renderRecipesTab();
     if (!el.panels.stats.classList.contains('hidden')) renderStatsTab();
   });
@@ -973,6 +1060,14 @@ function initSettingsTab() {
     state.prefs.darkMode = el.darkModeToggle.checked;
     savePrefs();
     applyDarkMode();
+  });
+
+  // Aperçu du son indépendant du réglage "Son" : permet de savoir à quoi
+  // ressemble l'alerte avant de l'activer, ou de la retrouver si désactivée.
+  el.testSoundBtn.addEventListener('click', () => {
+    unlockAudio();
+    beepTone(880, 150);
+    beepTone(1046, 180, 220);
   });
 }
 
@@ -1019,6 +1114,7 @@ function initTimerEvents() {
 // ----------------------------------------------------------------
 function init() {
   cacheDom();
+  document.documentElement.lang = state.prefs.language || 'fr';
   applyDarkMode();
   translateStaticUI();
   renderModeUI();

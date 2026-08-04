@@ -10,7 +10,7 @@
   --butter: #FFEBBE;      /* fond alt, beurre fondu */
   --card: #FFFDF8;
   --cocoa: #3E2620;       /* texte principal, chocolat fondu */
-  --cocoa-soft: #8A6652;  /* texte secondaire */
+  --cocoa-soft: #7A5744;  /* texte secondaire (assombri pour un meilleur contraste) */
   --honey: #E8A33D;       /* accent principal, miel doré */
   --honey-light: #F6CE86;
   --maple: #A8551C;       /* accent foncé, caramel/érable */
@@ -39,7 +39,7 @@
   --butter: #2E1F16;
   --card: #33241C;
   --cocoa: #F9EEDF;
-  --cocoa-soft: #CBAF98;
+  --cocoa-soft: #D9C0A8;  /* texte secondaire, mode sombre (éclairci pour le contraste) */
   --honey: #F0AE49;
   --honey-light: #7A5327;
   --maple: #E08A4E;
@@ -69,7 +69,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   max-width: 480px;
   margin: 0 auto;
   padding: 20px 18px;
-  padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  padding-bottom: calc(118px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -174,7 +174,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
 .chooser-copy { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 
 .chooser-name { font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; }
-.chooser-desc { font-size: 0.85rem; color: var(--cocoa-soft); }
+.chooser-desc { font-size: 0.92rem; color: var(--cocoa-soft); }
 
 .chooser-arrow { font-size: 1.2rem; color: var(--honey); font-weight: 700; }
 
@@ -183,6 +183,107 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   color: var(--cocoa-soft);
   font-size: 0.85rem;
   padding: 8px 0 4px;
+}
+
+/* ===== Onglet Accueil : mise en avant (reprise + résumé du jour) ===== */
+.home-highlights {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.home-resume-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--maple);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+}
+
+.home-resume-text { display: flex; flex-direction: column; gap: 2px; }
+
+.home-resume-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
+.home-resume-value { font-weight: 700; font-size: 1rem; }
+
+.home-resume-btn {
+  flex-shrink: 0;
+  background: #fff;
+  color: var(--maple);
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.home-resume-btn:active { transform: scale(0.96); }
+
+.home-highlight-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.home-highlight-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 88px;
+}
+
+.home-highlight-title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--maple);
+}
+
+.home-highlight-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cocoa);
+}
+
+.home-highlight-empty {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--cocoa-soft);
+}
+
+.home-highlight-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.home-highlight-item .icon-crepe { width: 1.05em; height: 1.05em; }
+
+.home-last-time {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--cocoa-soft);
 }
 
 /* ===== Sélecteur de mode (onglet Minuteur) ===== */
@@ -245,6 +346,11 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   transition: background 0.3s, color 0.3s;
 }
 
+.step-indicator.face2 {
+  background: var(--maple);
+  color: #fff;
+}
+
 .step-indicator.flip {
   background: var(--jam);
   color: #fff;
@@ -293,6 +399,8 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   transition: stroke-dashoffset 1s linear, stroke 0.4s ease;
 }
 
+.timer-ring-progress.state-face1 { stroke: var(--honey); }
+.timer-ring-progress.state-face2 { stroke: var(--maple); }
 .timer-ring-progress.state-flip { stroke: var(--jam); }
 .timer-ring-progress.state-done { stroke: var(--sage); }
 
@@ -492,7 +600,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
 }
 
 .counter-label {
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   color: var(--cocoa-soft);
   font-weight: 700;
 }
@@ -572,8 +680,22 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
 .recipe-card-head h3 {
   font-size: 1.3rem;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
+
+.recipe-difficulty {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--maple);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
+}
+
+.recipe-difficulty--pancake { color: var(--maple); }
+.recipe-difficulty--gaufre { color: var(--jam); }
 
 .recipe-badges {
   display: flex;
@@ -583,18 +705,13 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
 
 .badge {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   background: var(--butter);
   color: var(--maple);
   padding: 4px 9px;
   border-radius: 999px;
   font-weight: 700;
   white-space: nowrap;
-}
-
-.badge-difficulty {
-  background: var(--jam);
-  color: #fff;
 }
 
 .badge-yield {
@@ -606,6 +723,27 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.btn-launch-recipe {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px 16px;
+  background: var(--butter);
+  color: var(--maple);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.btn-launch-recipe:active {
+  transform: scale(0.98);
+  background: var(--honey-light);
 }
 
 .recipe-col h4 {
@@ -715,7 +853,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
 }
 
 .hint-text {
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   color: var(--cocoa-soft);
   margin-top: 2px;
 }
@@ -733,6 +871,29 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
 
 .toggle-row { align-items: flex-start; }
 .toggle-row > div { flex: 1; }
+
+.sound-setting-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-test-sound {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--butter);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, background 0.2s;
+}
+
+.btn-test-sound:active { transform: scale(0.92); background: var(--honey-light); }
 
 .switch {
   position: relative;
@@ -805,7 +966,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   border: none;
   color: var(--nav-text);
   font-family: var(--font-body);
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   font-weight: 700;
   padding: 6px 1px;
   border-radius: 14px;
@@ -932,7 +1093,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
-  font-size: 0.7rem;
+  font-size: 0.74rem;
   font-weight: 800;
   color: var(--cocoa-soft);
   margin-bottom: 4px;
@@ -951,16 +1112,17 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   align-items: center;
   justify-content: center;
   border-radius: 9px;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: var(--cocoa-soft);
   position: relative;
 }
 
 .cal-cell.has-activity {
-  background: var(--butter);
+  background: var(--honey-light);
   color: var(--cocoa);
   font-weight: 700;
   cursor: pointer;
+  box-shadow: inset 0 0 0 1.5px rgba(168, 85, 28, 0.35);
 }
 
 .cal-cell.has-activity:active {
@@ -1141,7 +1303,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
 }
 
 .ach-desc {
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   color: var(--cocoa-soft);
 }
 
