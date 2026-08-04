@@ -57,6 +57,7 @@ html, body { height: 100%; -webkit-tap-highlight-color: transparent; }
 body {
   background: var(--batter);
   background-image: radial-gradient(circle at 15% 0%, var(--butter) 0%, transparent 45%);
+  background-repeat: no-repeat;
   color: var(--cocoa);
   font-family: var(--font-body);
   transition: background 0.3s, color 0.3s;
