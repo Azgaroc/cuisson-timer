@@ -306,6 +306,19 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--cocoa);
+  transition: color 0.2s ease;
+}
+
+/* Dernières secondes avant la fin d'une étape : le chrono passe en rouge
+   confiture et pulse doucement pour attirer l'œil sans être criard. */
+.timer-display.countdown {
+  color: var(--jam);
+  animation: countdownPulse 1s ease-in-out infinite;
+}
+
+@keyframes countdownPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 }
 
 .settings-panel {
@@ -957,6 +970,10 @@ h1, h2, h3, .font-display { font-family: var(--font-display); color: var(--cocoa
   outline: 2px solid var(--honey);
   outline-offset: -2px;
 }
+
+.cal-cell.cal-empty { visibility: hidden; }
+
+.cal-day-num { line-height: 1; }
 
 .cal-dot {
   font-family: var(--font-mono);

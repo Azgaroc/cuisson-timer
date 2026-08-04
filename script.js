@@ -31,7 +31,6 @@ const MODES = {
 
 const STORAGE_KEYS = {
   settings: 'cuissonTimer.settings',
-  counters: 'cuissonTimer.counters',
   prefs: 'cuissonTimer.prefs',
   history: 'cuissonTimer.history'
 };
@@ -213,9 +212,6 @@ function recordPreparation(mode) {
   renderSessionSummary();
 }
 
-// Adapter pour translations.js qui lit state.settings.language
-Object.defineProperty(state, 'settingsLangProxy', { enumerable: false });
-
 // ----------------------------------------------------------------
 // Traduction de l'UI (i18n)
 // ----------------------------------------------------------------
@@ -393,7 +389,7 @@ function resetCycleUI() {
   state.currentStep = 'idle';
   state.isRunning = false;
   state.lastBeepedSecond = null;
-    clearInterval(state.timerId);
+  clearInterval(state.timerId);
   state.timerId = null;
   releaseWakeLock();
   el.startPauseBtn.textContent = t('btnStart');

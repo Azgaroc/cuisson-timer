@@ -13,13 +13,15 @@ Aucun backend, aucune dépendance : uniquement HTML, CSS et JavaScript vanilla. 
 - Minuteur à durée unique pour les gaufres
 - Étapes affichées clairement : Face 1 → Retourner maintenant → Face 2 → Cuisson terminée
 - Bouton contextuel "Nouvelle crêpe / Nouveau pancake / Nouvelle gaufre" qui relance un cycle et incrémente le compteur
-- Compteurs indépendants par préparation + total global
-- Réinitialisation des compteurs
-- Réglages et compteurs sauvegardés dans le navigateur (`localStorage`)
-- Alerte sonore discrète + vibration à chaque fin d'étape
+- Compteurs indépendants par préparation + total global, dérivés de l'historique des préparations
+- Historique par jour consultable dans un calendrier (onglet Stats), avec correction/suppression manuelle des entrées
+- Trophées débloqués selon le nombre de préparations et la régularité
+- Réglages et historique sauvegardés dans le navigateur (`localStorage`)
+- Alerte sonore (bips synthétisés, pas de fichier audio) + vibration à chaque fin d'étape
+- L'écran reste allumé pendant la cuisson (Screen Wake Lock API, quand le navigateur le supporte)
 - Mode sombre
-- Interface 100% en français, grands boutons tactiles, pensée pour la cuisine
-- Installable comme application sur iPhone et Android (PWA)
+- Interface disponible en français, anglais, espagnol, allemand et portugais ; grands boutons tactiles, pensée pour la cuisine
+- Installable comme application sur iPhone et Android (PWA), avec mise à jour automatique du cache hors-ligne
 
 ---
 
@@ -29,16 +31,16 @@ Aucun backend, aucune dépendance : uniquement HTML, CSS et JavaScript vanilla. 
 .
 ├── index.html          # Structure de la page
 ├── style.css           # Styles (mobile-first, mode sombre)
-├── script.js           # Logique de l'application
+├── script.js           # Logique de l'application (minuteur, stats, réglages)
+├── recipes.js           # Données des recettes (ingrédients, étapes)
+├── translations.js      # Dictionnaire i18n (fr, en, es, de, pt)
 ├── manifest.json        # Manifeste PWA
 ├── service-worker.js    # Cache hors-ligne
 ├── README.md
 └── assets/
-    ├── icons/
-    │   ├── icon-192.png
-    │   └── icon-512.png
-    └── sounds/
-        └── beep.mp3
+    └── icons/
+        ├── icon-192.png
+        └── icon-512.png
 ```
 
 ---
@@ -111,13 +113,13 @@ Toutes les couleurs sont centralisées dans les variables CSS en haut de `style.
 }
 ```
 
-### Remplacer le son d'alerte
+### Changer le son d'alerte
 
-Remplacez le fichier `assets/sounds/beep.mp3` par un autre son court (format mp3, quelques centaines de ko max recommandé).
+Les bips ne viennent pas d'un fichier audio : ils sont synthétisés au vol avec la Web Audio API (voir `beepTone()` dans `script.js`), ce qui évite les soucis de lecture audio bloquée sur mobile. Pour changer le son, ajustez la fréquence et la durée passées à `beepTone()` dans `playBeep()` et `playFinalAlert()`.
 
 ### Ajouter un nouveau mode de cuisson
 
-Ajoutez une entrée dans l'objet `MODES` de `script.js`, un bouton correspondant dans `.mode-selector` de `index.html`, et une entrée initiale dans l'objet `counters`.
+Ajoutez une entrée dans l'objet `MODES` de `script.js` (avec ses `defaultDurations` et son `emoji`), un bouton correspondant dans `.mode-selector` et `.mode-chooser` de `index.html`, une entrée dans `RECIPES` (`recipes.js`) et les clés de traduction associées dans `translations.js`.
 
 ---
 
@@ -147,23 +149,20 @@ Ajoutez une entrée dans l'objet `MODES` de `script.js`, un bouton correspondant
 ## 🔧 Détails techniques
 
 - **Aucune dépendance externe** : pas de framework, pas de build step.
-- **Persistance** : `localStorage` pour les réglages (`cuissonTimer.settings`), les compteurs (`cuissonTimer.counters`) et le thème (`cuissonTimer.theme`).
-- **Minuteur fiable** : basé sur `setInterval` à 1 seconde, avec vérification de l'état `isRunning` à chaque tick.
+- **Persistance** : `localStorage` pour les réglages de durée (`cuissonTimer.settings`), les préférences (`cuissonTimer.prefs` : langue, son, vibration, mode sombre) et l'historique des préparations (`cuissonTimer.history`). Les compteurs affichés ne sont jamais stockés séparément : ils sont recalculés à partir de l'historique à chaque changement, ce qui évite toute désynchronisation entre le compteur et le calendrier.
+- **Minuteur fiable en arrière-plan** : basé sur un horodatage de fin d'étape (et non sur un simple décompte à chaque tick), pour rester exact même si le navigateur suspend le `setInterval` pendant que l'app est en arrière-plan (écran verrouillé, changement d'appli).
+- **Écran maintenu allumé** : Screen Wake Lock API pendant un cycle actif, redemandée automatiquement au retour au premier plan.
 - **Vibration** : utilise l'API `navigator.vibrate()` si supportée (Android principalement ; iOS Safari ne la supporte pas nativement, dégradation silencieuse).
-- **Son** : élément `<audio>` HTML5, lecture déclenchée par JavaScript.
-- **Hors-ligne** : le service worker met en cache les fichiers statiques essentiels lors de la première visite.
+- **Son** : bips générés avec la Web Audio API (pas de fichier audio), débloqués dès le premier tap pour rester utilisables même déclenchés depuis un timer en arrière-plan sur iOS.
+- **Hors-ligne** : le service worker utilise une stratégie *network-first* (toujours servir la version la plus fraîche quand le réseau répond, retomber sur le cache sinon), avec rechargement automatique de la page dès qu'une nouvelle version est activée.
 
 ---
 
 ## 🔮 Améliorations futures possibles
 
-- Ajouter un historique des cuissons (date, mode, durée réelle)
-- Ajouter une notification "wake lock" pour empêcher l'écran de s'éteindre pendant la cuisson
 - Ajouter un choix de sons d'alerte personnalisables
 - Ajouter un mode "plusieurs crêpes en parallèle" (plaque à plusieurs empreintes)
-- Export/import des réglages et compteurs (fichier JSON)
-- Ajouter des statistiques (temps moyen, nombre par jour/semaine)
-- Ajouter un écran de réglages dédié avec plus d'options (langues, unités)
+- Export/import des réglages et de l'historique (fichier JSON)
+- Statistiques plus fines (temps moyen par préparation, tendance par semaine)
 - Ajouter des animations de transition plus poussées entre les étapes
-- Support multilingue (anglais, etc.)
 - Icônes PWA plus travaillées (illustrations dédiées crêpe/pancake/gaufre)
