@@ -9,7 +9,7 @@
 // (et on met à jour le cache au passage) ; sinon, on retombe sur le cache
 // (mode hors-ligne).
 
-const CACHE_NAME = 'pancake-timer-v12';
+const CACHE_NAME = 'pancake-timer-v13';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -19,7 +19,8 @@ const ASSETS_TO_CACHE = [
   './recipes.js',
   './manifest.json',
   './assets/icons/icon-192.png',
-  './assets/icons/icon-512.png'
+  './assets/icons/icon-512.png',
+  './assets/icons/apple-touch-icon-180.png'
 ];
 
 self.addEventListener('install', (event) => {

@@ -40,7 +40,8 @@ Aucun backend, aucune dépendance : uniquement HTML, CSS et JavaScript vanilla. 
 └── assets/
     └── icons/
         ├── icon-192.png
-        └── icon-512.png
+        ├── icon-512.png
+        └── apple-touch-icon-180.png
 ```
 
 ---
